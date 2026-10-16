@@ -74,7 +74,7 @@ function addSpatialStars(scene){
 export async function createArtwork(renderer,scene){
  const loader=new GLTFLoader(),textures=new T.TextureLoader();
  const [model,fruitModel,cupNormal,lidNormal,fruitNormal,layout]=await Promise.all([loader.loadAsync(base+'cup_p4.glb'),loader.loadAsync(base+'fruits.glb'),textures.loadAsync(base+'cup9_p4_normal.webp'),textures.loadAsync(base+'lid9_p4_normal.webp'),textures.loadAsync(base+'fruit_normal.webp'),fetch(base+'layout-p4.json').then(r=>r.json())]);
- const [secondModel,secondCupNormal,secondLidNormal,secondLayout]=await Promise.all([loader.loadAsync(base+'cup_p7.glb'),textures.loadAsync(base+'cup9_p7_normal.webp'),textures.loadAsync(base+'lid9_p7_normal.webp'),fetch(base+'layout-p7.json').then(r=>r.json())]);
+ const [secondModel,secondCupNormal,secondLidNormal,secondLayout,mangoLayout]=await Promise.all([loader.loadAsync(base+'cup_p7.glb'),textures.loadAsync(base+'cup9_p7_normal.webp'),textures.loadAsync(base+'lid9_p7_normal.webp'),fetch(base+'layout-p7.json').then(r=>r.json()),fetch(base+'layout-mango.json').then(r=>r.json())]);
  for(const texture of [cupNormal,lidNormal,fruitNormal,secondCupNormal,secondLidNormal]){texture.flipY=false;texture.colorSpace=T.NoColorSpace;texture.anisotropy=renderer.capabilities.getMaxAnisotropy();}
  const pmrem=new T.PMREMGenerator(renderer),room=new RoomEnvironment();scene.environment=pmrem.fromScene(room,.04).texture;room.dispose();pmrem.dispose();
  scene.background=new T.Color('#d3a5d7');
@@ -85,20 +85,26 @@ export async function createArtwork(renderer,scene){
  const stars=addSpatialStars(scene);
 
  const cup=new T.Group();scene.add(cup);const prototypes=fruitModel.scene.getObjectByName('FruitPrototypes');const themes={};
- function buildTheme(model,id,normal,lidMap,layout,green){
-  const root=new T.Group();cup.add(root);const pkg=model.scene.getObjectByName('Pkg_'+id),extras=pkg.userData;root.add(pkg);
+ const p4Source=model.scene.getObjectByName('Pkg_P4'),p7Source=secondModel.scene.getObjectByName('Pkg_P7');
+ function buildTheme(pkgSrc,id,normal,lidMap,layout,style,clone){
+  const root=new T.Group();cup.add(root);
+  const cupScale=style.cupScale??1;root.scale.setScalar(cupScale);
+  const extras=pkgSrc.userData;
+  const pkg=clone?pkgSrc.clone(true):pkgSrc;root.add(pkg);
   const body=pkg.getObjectByName('Cup_'+id),lid=pkg.getObjectByName('Lid_'+id);body.material=optics(normal,1);lid.material=optics(lidMap,1);body.layers.set(2);lid.layers.set(2);body.renderOrder=4;lid.renderOrder=5;
-  const top=green?.065:fillY,low=extras.cavityProfile[0][1],creamHeight=low+(top-low)*.31;
-  const creamMat=new T.MeshPhysicalMaterial({color:green?'#d7eaa4':'#ffcbb2',roughness:.4,normalMap:fruitNormal,normalScale:new T.Vector2(.18,.18),sheen:.5,sheenColor:new T.Color('#ffe8d7'),emissive:green?'#b6c27d':'#ee8c72',emissiveIntensity:.13,envMapIntensity:.2});
+  const top=style.fillY,low=extras.cavityProfile[0][1],creamHeight=low+(top-low)*.31;
+  const creamMat=new T.MeshPhysicalMaterial({color:style.cream,roughness:.4,normalMap:fruitNormal,normalScale:new T.Vector2(.18,.18),sheen:.5,sheenColor:new T.Color('#ffe8d7'),emissive:style.creamEmissive,emissiveIntensity:.13,envMapIntensity:.2});
   const cream=new T.Mesh(liquidGeometry(extras.cavityProfile,low,creamHeight),creamMat);root.add(cream);
   const jelly=new T.Mesh(liquidGeometry(extras.cavityProfile,creamHeight,top),optics(normal,0));jelly.layers.set(1);jelly.renderOrder=2;root.add(jelly);jelly.frustumCulled=false;
   jelly.material.uniforms.cupRadius.value=radiusAt(extras.cavityProfile,top);
-  jelly.material.uniforms.absorption.value.set(green?'#b7da7c':'#e86dff');
+  jelly.material.uniforms.absorption.value.set(style.absorption);
   const fruitGroup=new T.Group();root.add(fruitGroup);const fruits=[];
   for(const piece of layout){const proto=prototypes.getObjectByName('FruitProto_'+piece.type);if(!proto)continue;const f=makeFruit(proto,piece.type,fruitNormal);f.position.fromArray(piece.position);f.quaternion.fromArray(piece.quaternion);f.scale.setScalar(piece.scale);f.userData={rest:f.position.clone(),quaternion:f.quaternion.clone(),type:piece.type,lag:new T.Vector3(),velocity:new T.Vector3()};fruitGroup.add(f);fruits.push(f);}
-  return {root,jelly,cream,body,lid,fruits,extras,fillY:top,bottom:low,radius:radiusAt(extras.cavityProfile,top)};
+  return {root,jelly,cream,body,lid,fruits,extras,fillY:top,bottom:low,radius:radiusAt(extras.cavityProfile,top),cupScale};
  }
- themes.berry=buildTheme(model,'P4',cupNormal,lidNormal,layout,false);themes.matcha=buildTheme(secondModel,'P7',secondCupNormal,secondLidNormal,secondLayout,true);
+ themes.berry=buildTheme(p4Source,'P4',cupNormal,lidNormal,layout,{cream:'#ffcbb2',creamEmissive:'#ee8c72',absorption:'#e86dff',fillY:fillY},false);
+ themes.matcha=buildTheme(p7Source,'P7',secondCupNormal,secondLidNormal,secondLayout,{cream:'#d7eaa4',creamEmissive:'#b6c27d',absorption:'#b7da7c',fillY:.065},false);
+ themes.mango=buildTheme(p4Source,'P4',cupNormal,lidNormal,mangoLayout,{cream:'#ffd98a',creamEmissive:'#e8923c',absorption:'#ff9a2e',fillY:fillY,cupScale:.78},true);
  const result={cup,ground,stars,themes,setFlavor(flavor){const theme=themes[flavor]||themes.berry;for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
  result.setFlavor('berry');return result;
 }

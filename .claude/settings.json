@@ -1,0 +1,27 @@
+{
+  "env": {
+    "API_TIMEOUT_MS": "3000000",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_LOG_USER_PROMPTS": "1",
+    "ANTHROPIC_AUTH_TOKEN": "4Yb7br7WDBh8i3WdfR7r5DpTTCz8QJR4",
+    "ANTHROPIC_BASE_URL": "https://antchat.alipay.com/api/anthropic",
+    "ANTHROPIC_MODEL": "GLM-5.2",
+    "ANTHROPIC_SMALL_FAST_MODEL": "GLM-5.2",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "GLM-5.2",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "GLM-5.2",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "GLM-5.2",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": "https://antcollector.alipay.com/namespace/clauders/task/metrics/otlp/api/v1/metrics",
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "https://antcollectorlog.alipay.com/namespace/clauders/task/log/otlp/api/v1/logs",
+    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": "http/protobuf",
+    "OTEL_RESOURCE_ATTRIBUTES": "username=60800191"
+  },
+  "skipWebFetchPreflight": true,
+  "enabledPlugins": {
+    "observai@TR-Engine": true
+  }
+}
