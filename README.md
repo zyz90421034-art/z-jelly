@@ -1,6 +1,6 @@
 # z-jelly
 
-An interactive, painted jelly cup made with Three.js. Procedural fruit, translucent jelly, brush textures and a paper-like finish. No external models or runtime asset services.
+A transparent fruit-jelly interaction study with a continuous cyan/lilac backdrop, no decorative background objects, and a minimal two-theme interface.
 
 ## Run
 
@@ -9,21 +9,16 @@ npm ci
 npm run dev
 ```
 
-Drag the jelly and release to wobble. Drag the background to orbit, scroll to zoom, or press **S** to shake. The three small paintings change the flavor.
-
-## Build and publish
-
-```sh
-npm run build
-```
-
-The site uses relative asset paths for GitHub Pages. The `docs/` folder contains the published build. After changing source, rebuild and replace `docs/` with `dist/` contents, preserving `docs/.nojekyll`, then push to `main`.
+Drag the cup, release to return, press S to shake; drag outside the cup to orbit and scroll to zoom. Published site: https://z-jelly-zyz90421034.zyz90421034.chatgpt.site
 
 ## Implementation
 
-- `src/physics.js`: independent layered spring simulation.
-- `src/main.js`: deformation, interaction and flavor controls.
-- `src/art.js`: procedural models, brush maps, translucency and painting post-processing.
-- `src/style.css`: minimal paper canvas layout.
+The active entry is `src/main-v2.js`. `src/interaction.js` uses meter-scale bounded spring following and rocking; `src/physics-v2.js` is an independent coarse volumetric displacement lattice. `src/art-v2.js` composites opaque content, liquid, and painted glass in separate WebGL passes.
 
-Art direction is inspired by [Jelly Painting by mesq](https://mesq.me/jelly-painting/). The geometry, procedural textures and reduced spring implementation here are independently created; the original site's models, textures and source are not included.
+Build with `npm run build`. GitHub Pages-ready output is retained in `docs/`. The public site is hosted on Sites and must be republished when source changes.
+
+## Attribution and limits
+
+The current comparison build uses publicly delivered cup/fruit GLBs, painted normal maps and placement data from [Jelly Painting by mesq](https://mesq.me/jelly-painting/). See [ASSET-CREDITS.md](ASSET-CREDITS.md); no license to these assets is granted by this project. The prior independent simplified artwork modules are retained as legacy references but are not the active entry.
+
+Input and physics parameters are calibrated from the prior analysis. The original WebGPU/TSL pipeline has not been reproduced byte-for-byte, and exact rendering or numerical equivalence is not claimed.
