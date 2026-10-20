@@ -42,9 +42,17 @@ void main(){vec3 n=paintedNormal();vec3 view=normalize(cameraPosition-vWorld);if
  float bodyDensity=liquid*(.10+.08*(1.-exp(-thickness/.035)));
  vec3 bodyColor=mix(absorption,vec3(1.,.91,.83),.5)*(.76+.10*facing);
  color=mix(color,bodyColor,bodyDensity);
- color=mix(color,color*tint,.06+liquid*.06);vec3 warm=vec3(.87,.67,.92);color+=warm*(.015+fresnel*.13)*(1.-liquid*.6);
+ color=mix(color,color*tint,.06+liquid*.06);vec3 warm=vec3(.87,.67,.92);color+=warm*(.015+fresnel*mix(.06,.13,liquid))*(1.-liquid*.6);
  vec3 h=normalize(view+normalize(vec3(-.55,.8,-.4)));float spec=pow(max(dot(n,h),0.),liquid>0.?85.:125.);color+=vec3(1.,.88,.79)*spec*.10;
- float stroke=texture2D(normalMap,vUv).r;color+=fresnel*(stroke-.5)*.32;gl_FragColor=vec4(color,1.);
+ float stroke=texture2D(normalMap,vUv).r;color+=fresnel*(stroke-.5)*.32;
+ if(kind>.5){
+  float silhouette=pow(1.-abs(dot(normalize(vNormal),view)),1.65);
+  float reflectedLight=smoothstep(-.25,.8,dot(n,normalize(vec3(-.55,.8,-.4))));
+  color=mix(color,vec3(.22,.29,.36),.045+silhouette*(.30+.12*(1.-reflectedLight)));
+  color+=vec3(1.,.95,.84)*silhouette*reflectedLight*.15;
+  color+=vec3(1.,.94,.84)*pow(max(dot(n,h),0.),55.)*.16;
+ }
+ gl_FragColor=vec4(color,1.);
 }`;
 function optics(map,kind){return new T.ShaderMaterial({vertexShader:vertex,fragmentShader:opticalFragment,uniforms:{cameraLocal:{value:new T.Vector3()},cupRadius:{value:.043},backdrop:{value:null},normalMap:{value:map},resolution:{value:new T.Vector2()},kind:{value:kind},paint:{value:kind?.67:.12},tint:{value:new T.Color(kind?'#ffffff':'#fff0ec')},absorption:{value:new T.Color(kind?'#efe4ff':'#e86dff')},distanceScale:{value:kind?.25:.094}},side:T.FrontSide,depthWrite:true});}
 function makeFruit(source,type,map){

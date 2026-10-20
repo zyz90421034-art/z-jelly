@@ -3850,9 +3850,17 @@ void main(){vec3 n=paintedNormal();vec3 view=normalize(cameraPosition-vWorld);if
  float bodyDensity=liquid*(.10+.08*(1.-exp(-thickness/.035)));
  vec3 bodyColor=mix(absorption,vec3(1.,.91,.83),.5)*(.76+.10*facing);
  color=mix(color,bodyColor,bodyDensity);
- color=mix(color,color*tint,.06+liquid*.06);vec3 warm=vec3(.87,.67,.92);color+=warm*(.015+fresnel*.13)*(1.-liquid*.6);
+ color=mix(color,color*tint,.06+liquid*.06);vec3 warm=vec3(.87,.67,.92);color+=warm*(.015+fresnel*mix(.06,.13,liquid))*(1.-liquid*.6);
  vec3 h=normalize(view+normalize(vec3(-.55,.8,-.4)));float spec=pow(max(dot(n,h),0.),liquid>0.?85.:125.);color+=vec3(1.,.88,.79)*spec*.10;
- float stroke=texture2D(normalMap,vUv).r;color+=fresnel*(stroke-.5)*.32;gl_FragColor=vec4(color,1.);
+ float stroke=texture2D(normalMap,vUv).r;color+=fresnel*(stroke-.5)*.32;
+ if(kind>.5){
+  float silhouette=pow(1.-abs(dot(normalize(vNormal),view)),1.65);
+  float reflectedLight=smoothstep(-.25,.8,dot(n,normalize(vec3(-.55,.8,-.4))));
+  color=mix(color,vec3(.22,.29,.36),.045+silhouette*(.30+.12*(1.-reflectedLight)));
+  color+=vec3(1.,.95,.84)*silhouette*reflectedLight*.15;
+  color+=vec3(1.,.94,.84)*pow(max(dot(n,h),0.),55.)*.16;
+ }
+ gl_FragColor=vec4(color,1.);
 }`;function xa(s,e){return new Bt({vertexShader:L0,fragmentShader:D0,uniforms:{cameraLocal:{value:new C},cupRadius:{value:.043},backdrop:{value:null},normalMap:{value:s},resolution:{value:new fe},kind:{value:e},paint:{value:e?.67:.12},tint:{value:new Te(e?"#ffffff":"#fff0ec")},absorption:{value:new Te(e?"#efe4ff":"#e86dff")},distanceScale:{value:e?.25:.094}},side:_n,depthWrite:!0})}function I0(s,e,t){const n=s.geometry.clone(),i=n.getAttribute("color"),r=[],a=Mc[e]||Mc.cherry,o=a.map(h=>new Te(h)),c=new Te;for(let h=0;h<n.attributes.position.count;h++)c.copy(o[0]),i&&(c.lerp(o[1],i.getX(h)),c.lerp(o[2],i.getY(h)),c.lerp(o[3],i.getZ(h)),c.multiplyScalar(.9+i.getW(h)*.2)),r.push(c.r,c.g,c.b);n.setAttribute("color",new Ut(r,3));const l=new en({color:"#ffffff",vertexColors:!0,normalMap:t,normalScale:new fe(.6,.6),roughness:e==="shiratama"?.42:.36,metalness:0,specularIntensity:.22,envMapIntensity:.08,clearcoat:0,sheen:.12,sheenColor:new Te(a[0]),emissive:new Te(a[0]),emissiveIntensity:.025});return l.onBeforeCompile=h=>{h.fragmentShader=h.fragmentShader.replace("#include <color_fragment>",`#include <color_fragment>
 float paintedFacing=clamp(dot(normalize(vNormal),normalize(vViewPosition)),0.,1.);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*diffuseColor.rgb*1.15,paintedFacing*paintedFacing);`)},new tt(n,l)}const U0=`
 uniform float backgroundTheme;
