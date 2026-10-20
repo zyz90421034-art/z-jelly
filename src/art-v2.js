@@ -60,6 +60,7 @@ function makeFruit(source,type,map){
 }
 
 const environmentColor=`
+uniform float backgroundTheme;
 float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
@@ -70,16 +71,18 @@ vec3 environmentColor(vec3 d){
  float violet=smoothstep(.32,.68,envCloud(p));
  float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
- vec3 c=mix(vec3(.12,.43,.67),vec3(.40,.25,.62),violet);
- c=mix(c,vec3(.52,.34,.46),rose);
- c=mix(c,vec3(.40,.52,.59),haze*.15);
+ vec3 cool=mix(vec3(.12,.43,.67),vec3(.13,.44,.33),backgroundTheme);
+ vec3 accent=mix(vec3(.40,.25,.62),vec3(.48,.49,.17),backgroundTheme);
+ vec3 c=mix(cool,accent,violet);
+ c=mix(c,mix(vec3(.52,.34,.46),vec3(.61,.49,.23),backgroundTheme),rose);
+ c=mix(c,mix(vec3(.40,.52,.59),vec3(.43,.57,.35),backgroundTheme),haze*.15);
 
  return c;
 }`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
- const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));sky.layers.set(3);scene.add(sky);
- const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);return ground;
+ const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({uniforms:{backgroundTheme:{value:0}},side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));sky.layers.set(3);scene.add(sky);
+ const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);ground.userData.backgroundTheme=sky.material.uniforms.backgroundTheme;return ground;
 }
 function addSpatialStars(scene){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d');
@@ -118,7 +121,7 @@ export async function createArtwork(renderer,scene){
   return {root,jelly,cream,body,lid,fruits,extras,fillY:top,bottom:low,radius:radiusAt(extras.cavityProfile,top)};
  }
  themes.berry=buildTheme(model,'P4',cupNormal,lidNormal,layout,false);themes.matcha=buildTheme(secondModel,'P7',secondCupNormal,secondLidNormal,secondLayout,true);
- const result={cup,ground,stars,themes,setFlavor(flavor){const theme=themes[flavor]||themes.berry;for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
+ const result={cup,ground,stars,themes,setFlavor(flavor){ground.userData.backgroundTheme.value=flavor==='matcha'?1:0;const theme=themes[flavor]||themes.berry;for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
  result.setFlavor('berry');return result;
 }
 
