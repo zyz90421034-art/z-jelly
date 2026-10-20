@@ -3855,25 +3855,35 @@ float paintedFacing=clamp(dot(normalize(vNormal),normalize(vViewPosition)),0.,1.
 float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
+float pastelDots(vec2 p,float seed){
+ vec2 cell=floor(p),f=fract(p);
+ vec2 center=.5+(vec2(envHash(vec3(cell,seed)),envHash(vec3(cell,seed+4.7)))-.5)*.94;
+ float radius=mix(.13,.33,envHash(vec3(cell,seed+9.2)));
+ float dist=length(f-center),aa=max(fwidth(dist)*.28,.035);
+ return 1.-smoothstep(radius-aa,radius+aa,dist);
+}
+float spatialDots(vec3 d,float scale,float seed){
+ vec3 w=pow(abs(d),vec3(12.));w/=w.x+w.y+w.z;
+ return dot(w,vec3(pastelDots(d.yz*scale,seed),pastelDots(d.zx*scale,seed+13.),pastelDots(d.xy*scale,seed+29.)));
+}
 vec3 environmentColor(vec3 d){
  vec3 p=d*2.4+vec3(3.1,8.7,1.4);
  vec3 warp=vec3(envCloud(p+vec3(2.1,0,3.7)),envCloud(p+vec3(7.3,4.8,0)),envCloud(p+vec3(0,9.1,5.2)))-.5;
  p+=warp*2.6;
- float violet=smoothstep(.25,.73,envCloud(p));
+ float violet=smoothstep(.32,.68,envCloud(p));
  float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
- vec3 c=mix(vec3(.19,.46,.59),vec3(.43,.31,.52),violet);
+ vec3 c=mix(vec3(.12,.43,.67),vec3(.40,.25,.62),violet);
  c=mix(c,vec3(.52,.34,.46),rose);
- c=mix(c,vec3(.40,.52,.59),haze*.28);
- // World-anchored, isotropic wax crumbs: no long parallel streaks.
- vec3 r=d*vec3(1.03,.97,1.01)+vec3(4.1,8.3,2.7);
- vec3 scuff=vec3(envNoise(r*32.),envNoise(r*32.+7.3),envNoise(r*32.+16.1))-.5;
- float crumbs=envNoise(r*155.+scuff*.9);
- float tooth=envNoise(r*315.+vec3(1.7,5.8,9.3));
- float brokenWax=envNoise(r*95.+scuff*1.4+vec3(6.2,1.4,3.9));
- float bare=smoothstep(.57,.82,tooth*.64+crumbs*.36);
- c*=.95+(crumbs-.5)*.14+(brokenWax-.5)*.08;
- c=mix(c,vec3(.72,.72,.65),bare*.38);
+ c=mix(c,vec3(.40,.52,.59),haze*.15);
+ // Two interleaved pigment grains, anchored to the surrounding sphere.
+ float warm=spatialDots(d,410.,2.7);
+ float cool=spatialDots(d,475.,18.3);
+ float pressure=envCloud(d*12.+vec3(2.8,6.1,9.4));
+ vec3 lightPigment=mix(vec3(.65,.77,.60),vec3(.77,.66,.61),violet);
+ vec3 darkPigment=mix(vec3(.10,.15,.48),vec3(.28,.10,.48),violet);
+ c=mix(c,lightPigment,warm*(.58+pressure*.22));
+ c=mix(c,darkPigment,cool*(.48+(1.-pressure)*.18));
  return c;
 }`;function U0(s){const e="varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}",t=new st(new Io(1.5,48,24),new Qt({side:wt,depthWrite:!1,vertexShader:e,fragmentShader:I0+"varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}"}));s.add(t);const n=new st(new Zi(2,2),new Qt({transparent:!0,depthWrite:!1,uniforms:{shadowCenter:{value:new fe}},vertexShader:e,fragmentShader:"varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}"}));return n.rotation.x=-Math.PI/2,n.position.y=-2e-4,s.add(n),n}function N0(s){const e=document.createElement("canvas");e.width=e.height=128;const t=e.getContext("2d"),n=t.createRadialGradient(64,64,0,64,64,60);n.addColorStop(0,"rgba(255,244,206,.8)"),n.addColorStop(.12,"rgba(255,244,206,.35)"),n.addColorStop(1,"rgba(255,244,206,0)"),t.fillStyle=n,t.fillRect(0,0,128,128),t.fillStyle="#fff3d1",t.beginPath(),t.moveTo(64,10),t.quadraticCurveTo(68,58,111,64),t.quadraticCurveTo(68,69,64,118),t.quadraticCurveTo(59,69,17,64),t.quadraticCurveTo(59,58,64,10),t.fill();const i=new md(e),r=new on;r.rotation.y=Et.degToRad(113.5),s.add(r);const a=[[-.087,.086,-.025],[.085,.058,-.015],[-.065,.018,.014],[.092,.006,.04],[.028,.1,-.07],[-.13,.065,-.12],[.13,.11,-.15],[-.036,.085,-.1],[.07,.022,-.11],[-.1,-.002,-.06]];for(let o=0;o<a.length;o++){const c=new $c({map:i,color:"#fff0ce",transparent:!0,opacity:.68,depthWrite:!1,toneMapped:!1}),l=new sd(c);l.position.fromArray(a[o]),l.scale.setScalar(.004+o%3*.0015),l.userData.phase=o*.77,r.add(l)}return r}async function F0(s,e){const t=new j_,n=new ch,[i,r,a,o,c,l]=await Promise.all([t.loadAsync(un+"cup_p4.glb"),t.loadAsync(un+"fruits.glb"),n.loadAsync(un+"cup9_p4_normal.webp"),n.loadAsync(un+"lid9_p4_normal.webp"),n.loadAsync(un+"fruit_normal.webp"),fetch(un+"layout-p4.json").then(S=>S.json())]),[h,u,d,p]=await Promise.all([t.loadAsync(un+"cup_p7.glb"),n.loadAsync(un+"cup9_p7_normal.webp"),n.loadAsync(un+"lid9_p7_normal.webp"),fetch(un+"layout-p7.json").then(S=>S.json())]);for(const S of[a,o,c,u,d])S.flipY=!1,S.colorSpace=Pn,S.anisotropy=s.capabilities.getMaxAnisotropy();const g=new uo(s),_=new C0;e.environment=g.fromScene(_,.04).texture,_.dispose(),g.dispose(),e.background=new Te("#d3a5d7");const m=new Dd("#b096c2","#ffabab",.98);e.add(m);const f=new co("#ffdcbd",3.2);f.position.set(-.16,.24,-.12),e.add(f);const T=new co("#b68bff",.85);T.position.set(.16,.04,.08),e.add(T);const y=U0(e),M=N0(e),A=new on;e.add(A);const C=r.scene.getObjectByName("FruitPrototypes"),P={};function N(S,L,B,V,j,X){const q=new on;A.add(q);const K=S.scene.getObjectByName("Pkg_"+L),k=K.userData;q.add(K);const ie=K.getObjectByName("Cup_"+L),le=K.getObjectByName("Lid_"+L);ie.material=va(B,1),le.material=va(V,1),ie.layers.set(2),le.layers.set(2),ie.renderOrder=4,le.renderOrder=5;const me=X?.065:xh,Ue=k.cavityProfile[0][1],Ke=Ue+(me-Ue)*.31,nt=new en({color:X?"#d7eaa4":"#ffcbb2",roughness:.4,normalMap:c,normalScale:new fe(.18,.18),sheen:.5,sheenColor:new Te("#ffe8d7"),emissive:X?"#b6c27d":"#ee8c72",emissiveIntensity:.13,envMapIntensity:.2}),Xe=new st(Mc(k.cavityProfile,Ue,Ke),nt);q.add(Xe);const G=new st(Mc(k.cavityProfile,Ke,me),va(B,0));G.layers.set(1),G.renderOrder=2,q.add(G),G.frustumCulled=!1,G.material.uniforms.cupRadius.value=ys(k.cavityProfile,me),G.material.uniforms.absorption.value.set(X?"#b7da7c":"#e86dff");const Z=new on;q.add(Z);const ue=[];for(const Ae of j){const xe=C.getObjectByName("FruitProto_"+Ae.type);if(!xe)continue;const De=D0(xe,Ae.type,c);De.position.fromArray(Ae.position),De.quaternion.fromArray(Ae.quaternion),De.scale.setScalar(Ae.scale),De.userData={rest:De.position.clone(),quaternion:De.quaternion.clone(),type:Ae.type,lag:new R,velocity:new R},Z.add(De),ue.push(De)}return{root:q,jelly:G,cream:Xe,body:ie,lid:le,fruits:ue,extras:k,fillY:me,bottom:Ue,radius:ys(k.cavityProfile,me)}}P.berry=N(i,"P4",a,o,l,!1),P.matcha=N(h,"P7",u,d,p,!0);const E={cup:A,ground:y,stars:M,themes:P,setFlavor(S){const L=P[S]||P.berry;for(const B of Object.values(P))B.root.visible=B===L;return Object.assign(E,L),E}};return E.setFlavor("berry"),E}const O0="varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}";function B0(s,e,t,n){const i=()=>new qn(512,512,{type:Yi,depthBuffer:!0,samples:Math.min(4,s.capabilities.maxSamples)}),r=i(),a=i(),o=i(),c=new Co,l=new Rr(-1,1,1,-1,0,1),h=new R,u={image:{value:o.texture},resolution:{value:new fe(800,800)}},d=new Qt({uniforms:u,vertexShader:O0,fragmentShader:`uniform sampler2D image;uniform vec2 resolution;varying vec2 vUv;
  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}

@@ -60,25 +60,35 @@ const environmentColor=`
 float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
+float pastelDots(vec2 p,float seed){
+ vec2 cell=floor(p),f=fract(p);
+ vec2 center=.5+(vec2(envHash(vec3(cell,seed)),envHash(vec3(cell,seed+4.7)))-.5)*.94;
+ float radius=mix(.13,.33,envHash(vec3(cell,seed+9.2)));
+ float dist=length(f-center),aa=max(fwidth(dist)*.28,.035);
+ return 1.-smoothstep(radius-aa,radius+aa,dist);
+}
+float spatialDots(vec3 d,float scale,float seed){
+ vec3 w=pow(abs(d),vec3(12.));w/=w.x+w.y+w.z;
+ return dot(w,vec3(pastelDots(d.yz*scale,seed),pastelDots(d.zx*scale,seed+13.),pastelDots(d.xy*scale,seed+29.)));
+}
 vec3 environmentColor(vec3 d){
  vec3 p=d*2.4+vec3(3.1,8.7,1.4);
  vec3 warp=vec3(envCloud(p+vec3(2.1,0,3.7)),envCloud(p+vec3(7.3,4.8,0)),envCloud(p+vec3(0,9.1,5.2)))-.5;
  p+=warp*2.6;
- float violet=smoothstep(.25,.73,envCloud(p));
+ float violet=smoothstep(.32,.68,envCloud(p));
  float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
- vec3 c=mix(vec3(.19,.46,.59),vec3(.43,.31,.52),violet);
+ vec3 c=mix(vec3(.12,.43,.67),vec3(.40,.25,.62),violet);
  c=mix(c,vec3(.52,.34,.46),rose);
- c=mix(c,vec3(.40,.52,.59),haze*.28);
- // World-anchored, isotropic wax crumbs: no long parallel streaks.
- vec3 r=d*vec3(1.03,.97,1.01)+vec3(4.1,8.3,2.7);
- vec3 scuff=vec3(envNoise(r*32.),envNoise(r*32.+7.3),envNoise(r*32.+16.1))-.5;
- float crumbs=envNoise(r*155.+scuff*.9);
- float tooth=envNoise(r*315.+vec3(1.7,5.8,9.3));
- float brokenWax=envNoise(r*95.+scuff*1.4+vec3(6.2,1.4,3.9));
- float bare=smoothstep(.57,.82,tooth*.64+crumbs*.36);
- c*=.95+(crumbs-.5)*.14+(brokenWax-.5)*.08;
- c=mix(c,vec3(.72,.72,.65),bare*.38);
+ c=mix(c,vec3(.40,.52,.59),haze*.15);
+ // Two interleaved pigment grains, anchored to the surrounding sphere.
+ float warm=spatialDots(d,410.,2.7);
+ float cool=spatialDots(d,475.,18.3);
+ float pressure=envCloud(d*12.+vec3(2.8,6.1,9.4));
+ vec3 lightPigment=mix(vec3(.65,.77,.60),vec3(.77,.66,.61),violet);
+ vec3 darkPigment=mix(vec3(.10,.15,.48),vec3(.28,.10,.48),violet);
+ c=mix(c,lightPigment,warm*(.58+pressure*.22));
+ c=mix(c,darkPigment,cool*(.48+(1.-pressure)*.18));
  return c;
 }`;
 function addStudio(scene){
