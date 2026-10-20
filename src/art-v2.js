@@ -161,7 +161,7 @@ export function createPaintingPipeline(renderer,scene,camera,art){
  }`});screen.add(new T.Mesh(new T.PlaneGeometry(2,2),shader));
  return {resize(w,h){const ratio=renderer.getPixelRatio(),x=Math.round(w*ratio),y=Math.round(h*ratio);for(const t of [opaque,liquid,glass,backdropA,backdropB])t.setSize(x,y);uniforms.resolution.value.set(x,y);scene.traverse(object=>{if(object.material?.uniforms?.resolution)object.material.uniforms.resolution.value.set(x,y);});},render(){
   camera.layers.set(3);renderer.setRenderTarget(backdropA);renderer.render(scene,camera);
-  const softness=renderer.getPixelRatio()*.85;
+  const softness=renderer.getPixelRatio()*.24;
   blurMaterial.uniforms.image.value=backdropA.texture;blurMaterial.uniforms.stepSize.value.set(softness/backdropA.width,0);renderer.setRenderTarget(backdropB);renderer.render(blurScene,ortho);
   blurMaterial.uniforms.image.value=backdropB.texture;blurMaterial.uniforms.stepSize.value.set(0,softness/backdropA.height);renderer.setRenderTarget(backdropA);renderer.render(blurScene,ortho);
   art.cup.updateWorldMatrix(true,false);camera.getWorldPosition(localCamera);art.cup.worldToLocal(localCamera);
