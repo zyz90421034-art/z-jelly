@@ -70,22 +70,20 @@ vec3 environmentColor(vec3 d){
  vec3 c=mix(vec3(.19,.46,.59),vec3(.43,.31,.52),violet);
  c=mix(c,vec3(.52,.34,.46),rose);
  c=mix(c,vec3(.40,.52,.59),haze*.28);
- // Direction-space pigment keeps the paper marks fixed in the surrounding scene.
- vec3 r=vec3(dot(d,vec3(.82,.48,.31)),dot(d,vec3(-.51,.85,.12)),dot(d,vec3(-.21,-.26,.94)));
- float stroke=envNoise(r*vec3(18.,145.,28.)+vec3(4.1,8.3,2.7));
- float crossStroke=envNoise(r*vec3(105.,24.,75.)+vec3(9.2,2.6,5.4));
- float tooth=envNoise(r*620.+vec3(1.7,5.8,9.3));
- float chips=envNoise(r*210.+vec3(6.2,1.4,3.9));
- float bare=smoothstep(.64,.88,tooth+stroke*.10+chips*.06);
- float wax=smoothstep(.22,.79,stroke*.72+crossStroke*.28);
- c*=.78+wax*.37;
- c=mix(c,c*vec3(.82,.86,1.05),smoothstep(.54,.8,crossStroke)*.28);
- c=mix(c,vec3(.72,.72,.65),bare*.42);
+ // World-anchored, isotropic wax crumbs: no long parallel streaks.
+ vec3 r=d*vec3(1.03,.97,1.01)+vec3(4.1,8.3,2.7);
+ vec3 scuff=vec3(envNoise(r*32.),envNoise(r*32.+7.3),envNoise(r*32.+16.1))-.5;
+ float crumbs=envNoise(r*360.+scuff*1.4);
+ float tooth=envNoise(r*780.+vec3(1.7,5.8,9.3));
+ float brokenWax=envNoise(r*170.+scuff*2.1+vec3(6.2,1.4,3.9));
+ float bare=smoothstep(.61,.84,tooth*.73+crumbs*.27);
+ c*=.92+(crumbs-.5)*.18+(brokenWax-.5)*.11;
+ c=mix(c,vec3(.72,.72,.65),bare*.33);
  return c;
 }`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
- const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world-cameraPosition)),1.);}`}));scene.add(sky);
+ const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));scene.add(sky);
  const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);return ground;
 }
 function addSpatialStars(scene){
@@ -137,10 +135,10 @@ export function createPaintingPipeline(renderer,scene,camera,art){
  const uniforms={image:{value:glass.texture},resolution:{value:new T.Vector2(800,800)}};
  const shader=new T.ShaderMaterial({uniforms,vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;uniform vec2 resolution;varying vec2 vUv;
  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
- void main(){vec2 p=vUv*resolution,px=1./resolution;float brush=n(p/vec2(6.,23.));vec2 offset=vec2(brush-.5,n(p/12.)-.5)*px*.65;
- vec3 c=texture2D(image,vUv+offset).rgb;float lum=dot(c,vec3(.2126,.7152,.0722));vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);outc=mix(outc,vec3(.68,.56,.61),.085);
- float fiber=n(p/vec2(2.,7.));float grain=h(p*.73);outc+=(fiber-.5)*.025+(grain-.5)*.065;outc*=.975+brush*.055;outc=mix(outc,vec3(.85,.79,.72),smoothstep(.79,.99,grain)*.28);
-
+ void main(){
+ vec3 c=texture2D(image,vUv).rgb;
+ vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);
+ outc=mix(outc,vec3(.68,.56,.61),.085);
  gl_FragColor=vec4(outc,1.);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
