@@ -39,6 +39,9 @@ void main(){vec3 n=paintedNormal();vec3 view=normalize(cameraPosition-vWorld);if
  vec2 off=nv.xy*(liquid*.018+.005)*(1.-facing*.65);vec2 edge=clamp(uv+off,vec2(.002),vec2(.998));
  vec3 color; color.r=texture2D(backdrop,edge+off*.11).r;color.g=texture2D(backdrop,edge).g;color.b=texture2D(backdrop,edge-off*.11).b;
  vec3 transmit=pow(max(absorption,vec3(.001)),vec3(thickness/max(distanceScale,.001)));color*=mix(vec3(1.),transmit,liquid*.75);
+ float bodyDensity=liquid*(.10+.08*(1.-exp(-thickness/.035)));
+ vec3 bodyColor=mix(absorption,vec3(1.,.91,.83),.5)*(.76+.10*facing);
+ color=mix(color,bodyColor,bodyDensity);
  color=mix(color,color*tint,.06+liquid*.06);vec3 warm=vec3(.87,.67,.92);color+=warm*(.015+fresnel*.13)*(1.-liquid*.6);
  vec3 h=normalize(view+normalize(vec3(-.55,.8,-.4)));float spec=pow(max(dot(n,h),0.),liquid>0.?85.:125.);color+=vec3(1.,.88,.79)*spec*.10;
  float stroke=texture2D(normalMap,vUv).r;color+=fresnel*(stroke-.5)*.32;gl_FragColor=vec4(color,1.);
