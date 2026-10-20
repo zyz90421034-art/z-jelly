@@ -68,7 +68,7 @@ function makeFruit(source,type,map){
 }
 
 const environmentColor=`
-uniform float backgroundTheme;
+uniform float backgroundTheme;uniform vec3 customCool;uniform vec3 customAccent;
 float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
@@ -79,18 +79,19 @@ vec3 environmentColor(vec3 d){
  float violet=smoothstep(.32,.68,envCloud(p));
  float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
- vec3 cool=mix(vec3(.12,.43,.67),vec3(.37,.58,.49),backgroundTheme);
- vec3 accent=mix(vec3(.40,.25,.62),vec3(.62,.63,.39),backgroundTheme);
+ vec3 cool=mix(vec3(.12,.43,.67),vec3(.37,.58,.49),clamp(backgroundTheme,0.,1.));
+ vec3 accent=mix(vec3(.40,.25,.62),vec3(.62,.63,.39),clamp(backgroundTheme,0.,1.));
  vec3 c=mix(cool,accent,violet);
  c=mix(c,mix(vec3(.52,.34,.46),vec3(.66,.60,.39),backgroundTheme),rose);
  c=mix(c,mix(vec3(.40,.52,.59),vec3(.53,.64,.48),backgroundTheme),haze*.15);
 
+ if(backgroundTheme>1.5)c=mix(customCool,customAccent,violet);
  return c;
 }`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
- const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({uniforms:{backgroundTheme:{value:0}},side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));sky.layers.set(3);scene.add(sky);
- const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);ground.userData.backgroundTheme=sky.material.uniforms.backgroundTheme;return ground;
+ const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({uniforms:{backgroundTheme:{value:0},customCool:{value:new T.Color('#bbd0cf')},customAccent:{value:new T.Color('#d4c7d9')}},side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));sky.layers.set(3);scene.add(sky);
+ const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);ground.userData.backgroundTheme=sky.material.uniforms.backgroundTheme;ground.userData.backgroundUniforms=sky.material.uniforms;return ground;
 }
 function addSpatialStars(scene){
  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d');
@@ -126,10 +127,11 @@ export async function createArtwork(renderer,scene){
   jelly.material.uniforms.absorption.value.set(green?'#b7da7c':'#e86dff');
   const fruitGroup=new T.Group();root.add(fruitGroup);const fruits=[];
   for(const piece of layout){const proto=prototypes.getObjectByName('FruitProto_'+piece.type);if(!proto)continue;const f=makeFruit(proto,piece.type,fruitNormal);f.position.fromArray(piece.position);f.quaternion.fromArray(piece.quaternion);f.scale.setScalar(piece.scale);f.userData={rest:f.position.clone(),quaternion:f.quaternion.clone(),type:piece.type,lag:new T.Vector3(),velocity:new T.Vector3()};fruitGroup.add(f);fruits.push(f);}
-  return {root,jelly,cream,body,lid,fruits,extras,fillY:top,bottom:low,radius:radiusAt(extras.cavityProfile,top)};
+  return {custom:false,customMeshes:null,root,jelly,cream,body,lid,fruits,extras,fillY:top,bottom:low,radius:radiusAt(extras.cavityProfile,top)};
  }
  themes.berry=buildTheme(model,'P4',cupNormal,lidNormal,layout,false);themes.matcha=buildTheme(secondModel,'P7',secondCupNormal,secondLidNormal,secondLayout,true);
- const result={cup,ground,stars,themes,setFlavor(flavor){ground.userData.backgroundTheme.value=flavor==='matcha'?1:0;const theme=themes[flavor]||themes.berry;for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
+ const result={cup,ground,stars,themes,setFlavor(flavor){const theme=themes[flavor]||themes.berry;ground.userData.backgroundTheme.value=theme.custom?2:flavor==='matcha'?1:0;if(theme.background){ground.userData.backgroundUniforms.customCool.value.copy(theme.background.cool);ground.userData.backgroundUniforms.customAccent.value.copy(theme.background.accent);}for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
+ result.addGenerated=(id,model,palette)=>{const rgb=palette?.find(c=>Math.max(...c)>96&&Math.max(...c)-Math.min(...c)>32)||palette?.[0]||[160,180,160],baseColor=new T.Color(`rgb(${rgb.join(',')})`),hsl={};baseColor.getHSL(hsl);const background={cool:new T.Color().setHSL((hsl.h+.07)%1,Math.min(.25,hsl.s*.5),.73),accent:new T.Color().setHSL((hsl.h+.94)%1,Math.min(.3,hsl.s*.55),.77)};const theme={custom:true,customMeshes:model.meshes,root:model.root,jelly:null,cream:null,body:null,lid:null,fruits:[],extras:{height:model.height,baseRadius:model.radius},fillY:Math.max(.008,model.height),bottom:0,radius:Math.max(.008,model.radius),background};model.root.visible=false;cup.add(model.root);themes[id]=theme;return theme;};
  result.setFlavor('berry');return result;
 }
 
@@ -173,10 +175,11 @@ export function createPaintingPipeline(renderer,scene,camera,art){
   blurMaterial.uniforms.image.value=backdropA.texture;blurMaterial.uniforms.stepSize.value.set(softness/backdropA.width,0);renderer.setRenderTarget(backdropB);renderer.render(blurScene,ortho);
   blurMaterial.uniforms.image.value=backdropB.texture;blurMaterial.uniforms.stepSize.value.set(0,softness/backdropA.height);renderer.setRenderTarget(backdropA);renderer.render(blurScene,ortho);
   art.cup.updateWorldMatrix(true,false);camera.getWorldPosition(localCamera);art.cup.worldToLocal(localCamera);
-  for(const mesh of [art.jelly,art.body,art.lid])mesh.material.uniforms.cameraLocal.value.copy(localCamera);
+  for(const mesh of [art.jelly,art.body,art.lid])if(mesh)mesh.material.uniforms.cameraLocal.value.copy(localCamera);
   camera.layers.set(0);renderer.setRenderTarget(opaque);renderer.render(scene,camera);
-  art.jelly.material.uniforms.backdrop.value=opaque.texture;camera.layers.enable(1);renderer.setRenderTarget(liquid);renderer.render(scene,camera);
-  art.body.material.uniforms.backdrop.value=liquid.texture;art.lid.material.uniforms.backdrop.value=liquid.texture;camera.layers.enable(2);renderer.setRenderTarget(glass);renderer.render(scene,camera);
+  for(const mesh of art.customMeshes||[]){mesh.material.uniforms.backdrop.value=opaque.texture;mesh.material.uniforms.resolution.value.copy(uniforms.resolution.value);}
+  if(art.jelly)art.jelly.material.uniforms.backdrop.value=opaque.texture;camera.layers.enable(1);renderer.setRenderTarget(liquid);renderer.render(scene,camera);
+  if(art.body)art.body.material.uniforms.backdrop.value=liquid.texture;if(art.lid)art.lid.material.uniforms.backdrop.value=liquid.texture;camera.layers.enable(2);renderer.setRenderTarget(glass);renderer.render(scene,camera);
   renderer.setRenderTarget(null);renderer.render(screen,ortho);
  },dispose(){for(const t of [opaque,liquid,glass,backdropA,backdropB])t.dispose();blurMaterial.dispose();backgroundMaterial.dispose();blurQuad.geometry.dispose();backgroundQuad.geometry.dispose();scene.remove(backgroundQuad);shader.dispose();}};
 }

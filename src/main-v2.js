@@ -4,6 +4,7 @@ import {createArtwork,createPaintingPipeline,fillY} from './art-v2.js';
 import {CupInteraction} from './interaction.js';
 import {JellyVolume} from './physics-v2.js';
 import './style.css';
+import {createImageLibrary} from './image-models.js';
 
 const canvas=document.querySelector('#scene'),notice=document.querySelector('#notice');
 const v=new T.Vector3(),a=new T.Vector3(),b=new T.Vector3(),q=new T.Quaternion();
@@ -21,13 +22,14 @@ function studyThumbnail(flavor){
 const studies=[['berry','Cherry'],['matcha','Kiwi']];
 for(const [flavor,label]of studies){const button=document.createElement('button');button.className='study'+(flavor===currentFlavor?' active':'');button.dataset.flavor=flavor;button.setAttribute('aria-label',label);button.setAttribute('aria-pressed',String(flavor===currentFlavor));button.innerHTML=studyThumbnail(flavor);button.addEventListener('click',()=>setFlavor(flavor));document.querySelector('.flavors').append(button);}
 
-function prepareMesh(mesh){mesh.userData.base??=new Float32Array(mesh.geometry.attributes.position.array);mesh.geometry.attributes.position.setUsage(T.DynamicDrawUsage);}
+function prepareMesh(mesh){if(!mesh)return;mesh.userData.base??=new Float32Array(mesh.geometry.attributes.position.array);mesh.geometry.attributes.position.setUsage(T.DynamicDrawUsage);}
 function configureTheme(){
- activeFill=art.fillY;volume=new JellyVolume({resolution:10,radius:art.radius,height:activeFill-art.bottom,bottom:art.bottom,frequency:3.4,damping:.12,adhesion:1,response:.35,maxDisplacement:.009});
- prepareMesh(art.jelly);prepareMesh(art.cream);interaction?.dispose();art.cup.position.set(0,0,0);art.cup.quaternion.identity();interaction=new CupInteraction({canvas,camera,cup:art.cup,hitObject:art.root,controls,maxOffset:.03,baseRadius:art.extras.baseRadius});
- const target=new T.Vector3(0,art.extras.height*.52,0),scale=currentFlavor==='matcha'?1.18:1;camera.position.sub(controls.target).multiplyScalar(scale/lastScale).add(target);controls.target.copy(target);lastScale=scale;controls.update();
+ activeFill=art.fillY;volume=new JellyVolume({resolution:10,radius:art.radius,height:activeFill-art.bottom,bottom:art.bottom,frequency:3.4,damping:art.custom?.24:.12,adhesion:art.custom?.25:1,response:art.custom?.22:.35,maxDisplacement:art.custom?.004:.009});
+ prepareMesh(art.jelly);prepareMesh(art.cream);for(const mesh of art.customMeshes||[])prepareMesh(mesh);interaction?.dispose();art.cup.position.set(0,0,0);art.cup.quaternion.identity();interaction=new CupInteraction({canvas,camera,cup:art.cup,hitObject:art.root,controls,maxOffset:.03,baseRadius:art.extras.baseRadius});
+ const target=new T.Vector3(0,art.extras.height*.52,0),scale=art.custom?1:currentFlavor==='matcha'?1.18:1;camera.position.sub(controls.target).multiplyScalar(scale/lastScale).add(target);controls.target.copy(target);lastScale=scale;controls.update();
 }
 function warpMesh(mesh){
+ if(!mesh)return;
  const position=mesh.geometry.attributes.position,base=mesh.userData.base;
  for(let i=0;i<position.count;i++){
   const x=base[i*3],y=base[i*3+1],z=base[i*3+2];volume.sample(x,y,z,v);
@@ -59,13 +61,14 @@ async function boot(){
  art=await createArtwork(renderer,scene);if(disposed)return;
  pipeline=createPaintingPipeline(renderer,scene,camera,art);
  art.setFlavor(currentFlavor);configureTheme();
+ createImageLibrary({art,onSelect:setFlavor});
  let previousAspect=1;
  const resize=()=>{const {width,height}=canvas.getBoundingClientRect();const aspect=width/height;const oldScale=1/Math.min(1,previousAspect),newScale=1/Math.min(1,aspect);camera.position.sub(controls.target).multiplyScalar(newScale/oldScale).add(controls.target);previousAspect=aspect;renderer.setSize(width,height,false);camera.aspect=aspect;camera.updateProjectionMatrix();pipeline.resize(width,height);};
  const observer=new ResizeObserver(resize);observer.observe(canvas.parentElement);resize();
  document.documentElement.dataset.state='ready';loader.remove();
  renderer.setAnimationLoop(()=>{
   const now=performance.now(),dt=Math.min(.05,(now-previous)/1000);previous=now;if(document.hidden)return;
-  const motion=interaction.update(dt);volume.update(dt,motion);warpMesh(art.jelly);warpMesh(art.cream);moveFruits(dt);art.ground.material.uniforms.shadowCenter.value.set(art.cup.position.x,art.cup.position.z);for(const star of art.stars.children)star.material.opacity=.6+.15*Math.sin(now*.0012+star.userData.phase);controls.update();pipeline.render();frame++;
+  const motion=interaction.update(dt);volume.update(dt,motion);warpMesh(art.jelly);warpMesh(art.cream);for(const mesh of art.customMeshes||[])warpMesh(mesh);moveFruits(dt);art.ground.material.uniforms.shadowCenter.value.set(art.cup.position.x,art.cup.position.z);for(const star of art.stars.children)star.material.opacity=.6+.15*Math.sin(now*.0012+star.userData.phase);controls.update();pipeline.render();frame++;
  });
  window.addEventListener('pagehide',()=>{disposed=true;observer.disconnect();interaction.dispose();renderer.setAnimationLoop(null);pipeline.dispose();renderer.dispose();},{once:true});
 }
