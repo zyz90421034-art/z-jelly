@@ -93,7 +93,7 @@ vec3 environmentColor(vec3 d){
 }`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
- const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));scene.add(sky);
+ const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world)),1.);}`}));sky.layers.set(3);scene.add(sky);
  const ground=new T.Mesh(new T.PlaneGeometry(2,2),new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{shadowCenter:{value:new T.Vector2()}},vertexShader:vertex,fragmentShader:`varying vec3 world;uniform vec2 shadowCenter;void main(){vec2 p=world.xz-shadowCenter;vec2 s=(p-vec2(-.024,.011))/vec2(.067,.047);float shade=exp(-dot(s,s)*2.)*.24+exp(-dot(p/.031,p/.031)*3.)*.12;gl_FragColor=vec4(.31,.23,.48,shade);}`}));ground.rotation.x=-Math.PI/2;ground.position.y=-.0002;scene.add(ground);return ground;
 }
 function addSpatialStars(scene){
@@ -141,6 +141,12 @@ const quadVertex=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.
 export function createPaintingPipeline(renderer,scene,camera,art){
  const makeTarget=()=>new T.WebGLRenderTarget(512,512,{type:T.HalfFloatType,depthBuffer:true,samples:Math.min(4,renderer.capabilities.maxSamples)});
  const opaque=makeTarget(),liquid=makeTarget(),glass=makeTarget(),screen=new T.Scene(),ortho=new T.OrthographicCamera(-1,1,1,-1,0,1);
+ const backdropA=new T.WebGLRenderTarget(512,512,{type:T.HalfFloatType,depthBuffer:false}),backdropB=backdropA.clone();
+ const blurScene=new T.Scene();
+ const blurMaterial=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{image:{value:null},stepSize:{value:new T.Vector2()}},vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;uniform vec2 stepSize;varying vec2 vUv;void main(){vec3 c=texture2D(image,vUv).rgb*.227027;c+=(texture2D(image,vUv+stepSize*1.384615).rgb+texture2D(image,vUv-stepSize*1.384615).rgb)*.316216;c+=(texture2D(image,vUv+stepSize*3.230769).rgb+texture2D(image,vUv-stepSize*3.230769).rgb)*.070270;gl_FragColor=vec4(c,1.);}`});
+ const blurQuad=new T.Mesh(new T.PlaneGeometry(2,2),blurMaterial);blurScene.add(blurQuad);
+ const backgroundMaterial=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{image:{value:backdropA.texture}},vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;varying vec2 vUv;void main(){gl_FragColor=texture2D(image,vUv);}`});
+ const backgroundQuad=new T.Mesh(new T.PlaneGeometry(2,2),backgroundMaterial);backgroundQuad.frustumCulled=false;backgroundQuad.renderOrder=-10000;scene.add(backgroundQuad);
  const localCamera=new T.Vector3();
  const uniforms={image:{value:glass.texture},resolution:{value:new T.Vector2(800,800)}};
  const shader=new T.ShaderMaterial({uniforms,vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;uniform vec2 resolution;varying vec2 vUv;
@@ -153,12 +159,16 @@ export function createPaintingPipeline(renderer,scene,camera,art){
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`});screen.add(new T.Mesh(new T.PlaneGeometry(2,2),shader));
- return {resize(w,h){const ratio=renderer.getPixelRatio(),x=Math.round(w*ratio),y=Math.round(h*ratio);for(const t of [opaque,liquid,glass])t.setSize(x,y);uniforms.resolution.value.set(x,y);scene.traverse(object=>{if(object.material?.uniforms?.resolution)object.material.uniforms.resolution.value.set(x,y);});},render(){
+ return {resize(w,h){const ratio=renderer.getPixelRatio(),x=Math.round(w*ratio),y=Math.round(h*ratio);for(const t of [opaque,liquid,glass,backdropA,backdropB])t.setSize(x,y);uniforms.resolution.value.set(x,y);scene.traverse(object=>{if(object.material?.uniforms?.resolution)object.material.uniforms.resolution.value.set(x,y);});},render(){
+  camera.layers.set(3);renderer.setRenderTarget(backdropA);renderer.render(scene,camera);
+  const softness=renderer.getPixelRatio()*.85;
+  blurMaterial.uniforms.image.value=backdropA.texture;blurMaterial.uniforms.stepSize.value.set(softness/backdropA.width,0);renderer.setRenderTarget(backdropB);renderer.render(blurScene,ortho);
+  blurMaterial.uniforms.image.value=backdropB.texture;blurMaterial.uniforms.stepSize.value.set(0,softness/backdropA.height);renderer.setRenderTarget(backdropA);renderer.render(blurScene,ortho);
   art.cup.updateWorldMatrix(true,false);camera.getWorldPosition(localCamera);art.cup.worldToLocal(localCamera);
   for(const mesh of [art.jelly,art.body,art.lid])mesh.material.uniforms.cameraLocal.value.copy(localCamera);
   camera.layers.set(0);renderer.setRenderTarget(opaque);renderer.render(scene,camera);
   art.jelly.material.uniforms.backdrop.value=opaque.texture;camera.layers.enable(1);renderer.setRenderTarget(liquid);renderer.render(scene,camera);
   art.body.material.uniforms.backdrop.value=liquid.texture;art.lid.material.uniforms.backdrop.value=liquid.texture;camera.layers.enable(2);renderer.setRenderTarget(glass);renderer.render(scene,camera);
   renderer.setRenderTarget(null);renderer.render(screen,ortho);
- },dispose(){for(const t of [opaque,liquid,glass])t.dispose();shader.dispose();}};
+ },dispose(){for(const t of [opaque,liquid,glass,backdropA,backdropB])t.dispose();blurMaterial.dispose();backgroundMaterial.dispose();blurQuad.geometry.dispose();backgroundQuad.geometry.dispose();scene.remove(backgroundQuad);shader.dispose();}};
 }
