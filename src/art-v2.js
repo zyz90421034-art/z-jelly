@@ -60,17 +60,6 @@ const environmentColor=`
 float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
-float pastelDots(vec2 p,float seed){
- vec2 cell=floor(p),f=fract(p);
- vec2 center=.5+(vec2(envHash(vec3(cell,seed)),envHash(vec3(cell,seed+4.7)))-.5)*.94;
- float radius=mix(.13,.33,envHash(vec3(cell,seed+9.2)));
- float dist=length(f-center),aa=max(fwidth(dist)*.28,.035);
- return 1.-smoothstep(radius-aa,radius+aa,dist);
-}
-float spatialDots(vec3 d,float scale,float seed){
- vec3 w=pow(abs(d),vec3(12.));w/=w.x+w.y+w.z;
- return dot(w,vec3(pastelDots(d.yz*scale,seed),pastelDots(d.zx*scale,seed+13.),pastelDots(d.xy*scale,seed+29.)));
-}
 vec3 environmentColor(vec3 d){
  vec3 p=d*2.4+vec3(3.1,8.7,1.4);
  vec3 warp=vec3(envCloud(p+vec3(2.1,0,3.7)),envCloud(p+vec3(7.3,4.8,0)),envCloud(p+vec3(0,9.1,5.2)))-.5;
@@ -81,14 +70,7 @@ vec3 environmentColor(vec3 d){
  vec3 c=mix(vec3(.12,.43,.67),vec3(.40,.25,.62),violet);
  c=mix(c,vec3(.52,.34,.46),rose);
  c=mix(c,vec3(.40,.52,.59),haze*.15);
- // Two interleaved pigment grains, anchored to the surrounding sphere.
- float warm=spatialDots(d,410.,2.7);
- float cool=spatialDots(d,475.,18.3);
- float pressure=envCloud(d*12.+vec3(2.8,6.1,9.4));
- vec3 lightPigment=mix(vec3(.65,.77,.60),vec3(.77,.66,.61),violet);
- vec3 darkPigment=mix(vec3(.10,.15,.48),vec3(.28,.10,.48),violet);
- c=mix(c,lightPigment,warm*(.58+pressure*.22));
- c=mix(c,darkPigment,cool*(.48+(1.-pressure)*.18));
+
  return c;
 }`;
 function addStudio(scene){
@@ -148,16 +130,28 @@ export function createPaintingPipeline(renderer,scene,camera,art){
  const backgroundMaterial=new T.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{image:{value:backdropA.texture}},vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;varying vec2 vUv;void main(){gl_FragColor=texture2D(image,vUv);}`});
  const backgroundQuad=new T.Mesh(new T.PlaneGeometry(2,2),backgroundMaterial);backgroundQuad.frustumCulled=false;backgroundQuad.renderOrder=-10000;scene.add(backgroundQuad);
  const localCamera=new T.Vector3();
- const uniforms={image:{value:glass.texture},resolution:{value:new T.Vector2(800,800)}};
- const shader=new T.ShaderMaterial({uniforms,vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;uniform vec2 resolution;varying vec2 vUv;
- float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+ const uniforms={image:{value:glass.texture},resolution:{value:new T.Vector2(800,800)},viewToWorld:{value:camera.matrixWorld},inverseProjection:{value:camera.projectionMatrixInverse}};
+ const shader=new T.ShaderMaterial({uniforms,vertexShader:quadVertex,fragmentShader:`uniform sampler2D image;uniform vec2 resolution;uniform mat4 viewToWorld;uniform mat4 inverseProjection;varying vec2 vUv;
+ float hash3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+ float paperNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);}
+ vec3 paintSample(vec2 uv){return texture2D(image,clamp(uv,vec2(.001),vec2(.999))).rgb;}
  void main(){
- vec3 c=texture2D(image,vUv).rgb;
- vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);
- outc=mix(outc,vec3(.68,.56,.61),.085);
+ vec2 px=1./resolution;vec3 center=paintSample(vUv);
+ vec3 gx=paintSample(vUv+vec2(px.x,0))-paintSample(vUv-vec2(px.x,0));
+ vec3 gy=paintSample(vUv+vec2(0,px.y))-paintSample(vUv-vec2(0,px.y));
+ float xx=dot(gx,gx),yy=dot(gy,gy),xy=dot(gx,gy);
+ float angle=.5*atan(2.*xy,xx-yy)+1.5707963;vec2 tangent=vec2(cos(angle),sin(angle));
+ vec3 c=center;float weight=1.;
+ for(int i=1;i<=3;i++){vec2 offset=tangent*px*float(i)*1.5;vec3 a=paintSample(vUv+offset),b=paintSample(vUv-offset);float wa=exp(-dot(a-center,a-center)*24.)*.5,wb=exp(-dot(b-center,b-center)*24.)*.5;c+=a*wa+b*wb;weight+=wa+wb;}
+ c=mix(center,c/weight,.65);
+ vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);outc=mix(outc,vec3(.68,.56,.61),.04);
  gl_FragColor=vec4(outc,1.);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
+ vec3 ray=normalize((viewToWorld*vec4((inverseProjection*vec4(vUv*2.-1.,1.,1.)).xyz,0.)).xyz);
+ float paper=(paperNoise(ray*540.+3.7)*2.-1.)*.6+hash3(floor(ray*1320.)+11.3)*.4+.2;
+ vec3 pigment=floor(clamp(gl_FragColor.rgb,0.,1.)*9.+clamp(paper,0.,1.))/9.;
+ gl_FragColor.rgb=mix(gl_FragColor.rgb,pigment,.8);
  }`});screen.add(new T.Mesh(new T.PlaneGeometry(2,2),shader));
  return {resize(w,h){const ratio=renderer.getPixelRatio(),x=Math.round(w*ratio),y=Math.round(h*ratio);for(const t of [opaque,liquid,glass,backdropA,backdropB])t.setSize(x,y);uniforms.resolution.value.set(x,y);scene.traverse(object=>{if(object.material?.uniforms?.resolution)object.material.uniforms.resolution.value.set(x,y);});},render(){
   camera.layers.set(3);renderer.setRenderTarget(backdropA);renderer.render(scene,camera);
