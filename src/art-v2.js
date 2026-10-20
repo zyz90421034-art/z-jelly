@@ -71,11 +71,11 @@ vec3 environmentColor(vec3 d){
  float violet=smoothstep(.32,.68,envCloud(p));
  float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
- vec3 cool=mix(vec3(.12,.43,.67),vec3(.13,.44,.33),backgroundTheme);
- vec3 accent=mix(vec3(.40,.25,.62),vec3(.48,.49,.17),backgroundTheme);
+ vec3 cool=mix(vec3(.12,.43,.67),vec3(.37,.58,.49),backgroundTheme);
+ vec3 accent=mix(vec3(.40,.25,.62),vec3(.62,.63,.39),backgroundTheme);
  vec3 c=mix(cool,accent,violet);
- c=mix(c,mix(vec3(.52,.34,.46),vec3(.61,.49,.23),backgroundTheme),rose);
- c=mix(c,mix(vec3(.40,.52,.59),vec3(.43,.57,.35),backgroundTheme),haze*.15);
+ c=mix(c,mix(vec3(.52,.34,.46),vec3(.66,.60,.39),backgroundTheme),rose);
+ c=mix(c,mix(vec3(.40,.52,.59),vec3(.53,.64,.48),backgroundTheme),haze*.15);
 
  return c;
 }`;
