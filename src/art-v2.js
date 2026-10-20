@@ -56,7 +56,21 @@ function makeFruit(source,type,map){
  return new T.Mesh(geometry,material);
 }
 
-const environmentColor=`vec3 environmentColor(vec3 d){float side=smoothstep(-.8,.8,d.x*.8+d.z*.4);vec3 c=mix(vec3(.17,.46,.63),vec3(.46,.29,.53),side*.65);return mix(c,vec3(.55,.33,.54),smoothstep(.05,.8,d.y)*.65);}`;
+const environmentColor=`
+float envHash(vec3 p){p=fract(p*.3183099+vec3(.13,.37,.71));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float envNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(envHash(i),envHash(i+vec3(1,0,0)),f.x),mix(envHash(i+vec3(0,1,0)),envHash(i+vec3(1,1,0)),f.x),f.y),mix(mix(envHash(i+vec3(0,0,1)),envHash(i+vec3(1,0,1)),f.x),mix(envHash(i+vec3(0,1,1)),envHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+float envCloud(vec3 p){return envNoise(p)*.58+envNoise(p*2.03+vec3(5.7,1.3,9.2))*.28+envNoise(p*4.11+vec3(1.2,8.4,3.6))*.14;}
+vec3 environmentColor(vec3 d){
+ vec3 p=d*2.4+vec3(3.1,8.7,1.4);
+ vec3 warp=vec3(envCloud(p+vec3(2.1,0,3.7)),envCloud(p+vec3(7.3,4.8,0)),envCloud(p+vec3(0,9.1,5.2)))-.5;
+ p+=warp*2.6;
+ float violet=smoothstep(.25,.73,envCloud(p));
+ float rose=smoothstep(.4,.78,envCloud(p*.82+vec3(8.3,2.9,6.4)))*.5;
+ float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
+ vec3 c=mix(vec3(.19,.46,.59),vec3(.43,.31,.52),violet);
+ c=mix(c,vec3(.52,.34,.46),rose);
+ return mix(c,vec3(.40,.52,.59),haze*.28);
+}`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
  const sky=new T.Mesh(new T.SphereGeometry(1.5,48,24),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,vertexShader:vertex,fragmentShader: environmentColor+`varying vec3 world;void main(){gl_FragColor=vec4(environmentColor(normalize(world-cameraPosition)),1.);}`}));scene.add(sky);
