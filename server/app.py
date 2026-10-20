@@ -206,11 +206,13 @@ async def create_model(image: UploadFile = File(...)):
     try:
         source = Image.open(io.BytesIO(raw))
         if source.width*source.height > Image.MAX_IMAGE_PIXELS:
-            raise ValueError('Image too large')
+            raise HTTPException(413, '图片像素过大，请通过网页自动压缩后重新上传。')
         source = ImageOps.exif_transpose(source).convert('RGBA')
         source.thumbnail((1600, 1600))
         source.load()
-    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError):
+    except Image.DecompressionBombError:
+        raise HTTPException(413, '图片像素过大，请通过网页自动压缩后重新上传。')
+    except (UnidentifiedImageError, OSError, ValueError):
         raise HTTPException(400, '图片无法读取，请使用 PNG、JPEG 或 WebP。')
     with admission:
         if any(j['status'] == 'running' for j in jobs.values()):
