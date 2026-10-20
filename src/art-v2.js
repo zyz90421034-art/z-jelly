@@ -69,7 +69,19 @@ vec3 environmentColor(vec3 d){
  float haze=smoothstep(.32,.8,envCloud(p*1.3+vec3(1.7,6.2,4.3)));
  vec3 c=mix(vec3(.19,.46,.59),vec3(.43,.31,.52),violet);
  c=mix(c,vec3(.52,.34,.46),rose);
- return mix(c,vec3(.40,.52,.59),haze*.28);
+ c=mix(c,vec3(.40,.52,.59),haze*.28);
+ // Direction-space pigment keeps the paper marks fixed in the surrounding scene.
+ vec3 r=vec3(dot(d,vec3(.82,.48,.31)),dot(d,vec3(-.51,.85,.12)),dot(d,vec3(-.21,-.26,.94)));
+ float stroke=envNoise(r*vec3(18.,145.,28.)+vec3(4.1,8.3,2.7));
+ float crossStroke=envNoise(r*vec3(105.,24.,75.)+vec3(9.2,2.6,5.4));
+ float tooth=envNoise(r*620.+vec3(1.7,5.8,9.3));
+ float chips=envNoise(r*210.+vec3(6.2,1.4,3.9));
+ float bare=smoothstep(.64,.88,tooth+stroke*.10+chips*.06);
+ float wax=smoothstep(.22,.79,stroke*.72+crossStroke*.28);
+ c*=.78+wax*.37;
+ c=mix(c,c*vec3(.82,.86,1.05),smoothstep(.54,.8,crossStroke)*.28);
+ c=mix(c,vec3(.72,.72,.65),bare*.42);
+ return c;
 }`;
 function addStudio(scene){
  const vertex=`varying vec3 world;void main(){world=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(world,1.);}`;
