@@ -111,14 +111,24 @@ def foreground(image):
     keys = quant[:, 0]*64+quant[:, 1]*8+quant[:, 2]
     bins = np.bincount(keys, minlength=512)
     palette = []
-    for key in bins.argsort()[::-1]:
-        if not bins[key]:
+    candidates = []
+    for key in np.flatnonzero(bins):
+        if bins[key] < max(3, len(pixels)*.003):
             continue
         rgb = pixels[keys == key].mean(axis=0).astype(int)
+        brightness = rgb.max()/255
+        saturation = (rgb.max()-rgb.min())/max(1, rgb.max())
+        if brightness < .48 or saturation < .26 or rgb.min() > 220:
+            continue
+        score = saturation * brightness**.5 * bins[key]**.25
+        candidates.append((score, rgb))
+    for _, rgb in sorted(candidates, key=lambda item: item[0], reverse=True):
         if all(np.linalg.norm(rgb - np.array(old)) > 48 for old in palette):
             palette.append(rgb.tolist())
         if len(palette) == 3:
             break
+    if not palette:
+        palette = [[104, 186, 224], [168, 139, 222]]
     return square, palette, list(bbox)
 
 

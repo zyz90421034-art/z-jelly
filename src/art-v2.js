@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {modelPalette} from './background-palette.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 
@@ -131,7 +132,7 @@ export async function createArtwork(renderer,scene){
  }
  themes.berry=buildTheme(model,'P4',cupNormal,lidNormal,layout,false);themes.matcha=buildTheme(secondModel,'P7',secondCupNormal,secondLidNormal,secondLayout,true);
  const result={cup,ground,stars,themes,setFlavor(flavor){const theme=themes[flavor]||themes.berry;ground.userData.backgroundTheme.value=theme.custom?2:flavor==='matcha'?1:0;if(theme.background){ground.userData.backgroundUniforms.customCool.value.copy(theme.background.cool);ground.userData.backgroundUniforms.customAccent.value.copy(theme.background.accent);}for(const value of Object.values(themes))value.root.visible=value===theme;Object.assign(result,theme);return result;}};
- result.addGenerated=(id,model,palette)=>{const rgb=palette?.find(c=>Math.max(...c)>96&&Math.max(...c)-Math.min(...c)>32)||palette?.[0]||[160,180,160],baseColor=new T.Color(`rgb(${rgb.join(',')})`),hsl={};baseColor.getHSL(hsl);const background={cool:new T.Color().setHSL((hsl.h+.07)%1,Math.min(.25,hsl.s*.5),.73),accent:new T.Color().setHSL((hsl.h+.94)%1,Math.min(.3,hsl.s*.55),.77)};const theme={custom:true,customMeshes:model.meshes,root:model.root,jelly:null,cream:null,body:null,lid:null,fruits:[],extras:{height:model.height,baseRadius:model.radius},fillY:Math.max(.008,model.height),bottom:0,radius:Math.max(.008,model.radius),background};model.root.visible=false;cup.add(model.root);themes[id]=theme;return theme;};
+ result.addGenerated=(id,model,palette)=>{const background=modelPalette(palette);const theme={custom:true,customMeshes:model.meshes,root:model.root,jelly:null,cream:null,body:null,lid:null,fruits:[],extras:{height:model.height,baseRadius:model.radius},fillY:Math.max(.008,model.height),bottom:0,radius:Math.max(.008,model.radius),background};model.root.visible=false;cup.add(model.root);themes[id]=theme;return theme;};
  result.removeGenerated=id=>{const theme=themes[id];if(!theme?.custom)return;theme.root.removeFromParent();theme.root.traverse(object=>{if(!object.isMesh)return;object.geometry.dispose();object.material.uniforms?.paintMap?.value?.dispose();object.material.dispose();});delete themes[id];};
  result.setFlavor('berry');return result;
 }
@@ -161,7 +162,7 @@ export function createPaintingPipeline(renderer,scene,camera,art){
  vec3 c=center;float weight=1.;
  for(int i=1;i<=3;i++){vec2 offset=tangent*px*float(i)*1.5;vec3 a=paintSample(vUv+offset),b=paintSample(vUv-offset);float wa=exp(-dot(a-center,a-center)*24.)*.5,wb=exp(-dot(b-center,b-center)*24.)*.5;c+=a*wa+b*wb;weight+=wa+wb;}
  c=mix(center,c/weight,.65);
- vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);outc=mix(outc,vec3(.68,.56,.61),.04);
+ vec3 outc=mix(c,pow(max(c,vec3(0.)),vec3(1.04)),.25);
  gl_FragColor=vec4(outc,1.);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
