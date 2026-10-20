@@ -73,12 +73,12 @@ vec3 environmentColor(vec3 d){
  // World-anchored, isotropic wax crumbs: no long parallel streaks.
  vec3 r=d*vec3(1.03,.97,1.01)+vec3(4.1,8.3,2.7);
  vec3 scuff=vec3(envNoise(r*32.),envNoise(r*32.+7.3),envNoise(r*32.+16.1))-.5;
- float crumbs=envNoise(r*360.+scuff*1.4);
- float tooth=envNoise(r*780.+vec3(1.7,5.8,9.3));
- float brokenWax=envNoise(r*170.+scuff*2.1+vec3(6.2,1.4,3.9));
- float bare=smoothstep(.61,.84,tooth*.73+crumbs*.27);
- c*=.92+(crumbs-.5)*.18+(brokenWax-.5)*.11;
- c=mix(c,vec3(.72,.72,.65),bare*.33);
+ float crumbs=envNoise(r*155.+scuff*.9);
+ float tooth=envNoise(r*315.+vec3(1.7,5.8,9.3));
+ float brokenWax=envNoise(r*95.+scuff*1.4+vec3(6.2,1.4,3.9));
+ float bare=smoothstep(.57,.82,tooth*.64+crumbs*.36);
+ c*=.95+(crumbs-.5)*.14+(brokenWax-.5)*.08;
+ c=mix(c,vec3(.72,.72,.65),bare*.38);
  return c;
 }`;
 function addStudio(scene){
