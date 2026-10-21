@@ -1,5 +1,11 @@
 # 图片转 3D 服务
 
+## 恢复本机 GPU 的公网访问
+
+在项目电脑的 PowerShell 运行 `pwsh -NoProfile -File server/start-public.ps1`。脚本保留系统代理设置，启动本地 GPU API 和 Cloudflare Quick Tunnel，检查公网健康状态，并写入 `public/model-service.json`。它会打印当前公网地址；需要把这个配置重新构建并发布到 GitHub Pages，手机才会连接到新地址。
+
+本机停机或隧道关闭后，手机无法建模。Quick Tunnel 重启通常更换地址；脚本不会自动提交 GitHub，也不会开通付费服务。错误日志在忽略的 `.model-data/` 目录。若云端部署尚未启用，GitHub Pages 仅负责展示，不执行重建。
+
 流程：rembg U2Net 前景分割 → 主连通主体 → TripoSR 三维重建及顶点颜色 → 约 4500 面的减面与颜色转移 → GLB → 网页粉彩渲染、拖拽与新卡片。
 
 这是真正的三维重建。单张照片无法确定被遮挡的背面；复杂、透明或多个重叠主体的效果会有局限。前景识别使用显著性分割，并不提供语义类别标签。
