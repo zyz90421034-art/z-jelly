@@ -2,12 +2,8 @@ import * as T from 'three';
 import {modelPalette} from './background-palette.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {jellyIllustrationMaterial,softenGeometry,stylizeVertexColors} from './generated-material.js';
+import {primitiveStudy} from './semantic-recipes.js';
 
-let endpoint=(import.meta.env.VITE_MODEL_API_URL||'').replace(/\/$/,'');
-const devService=['localhost','127.0.0.1'].includes(location.hostname)&&location.port==='5173';
-let apiAvailable=!!endpoint||devService;
-const serviceReady=(async()=>{if(apiAvailable)return;try{const response=await fetch(import.meta.env.BASE_URL+'model-service.json');if(!response.ok)return;const config=await response.json();const address=new URL(config.url);if(address.protocol==='https:'){endpoint=address.href.replace(/\/$/,'');apiAvailable=true;}}catch{}})();
-const url=path=>endpoint+path;
 export async function compressModelImage(file){
  let image;
  try{image=await createImageBitmap(file);}catch{throw Error('浏览器无法解码这张图片，请重新导出为 PNG 或 JPEG 后重试。');}
@@ -20,7 +16,6 @@ export async function compressModelImage(file){
   return new File([blob],file.name.replace(/\.[^.]*$/,'')+'.png',{type:'image/png'});
  }finally{image.close();}
 }
-const pause=(ms,signal)=>new Promise((resolve,reject)=>{const abort=()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));};const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},ms);if(signal.aborted)abort();else signal.addEventListener('abort',abort,{once:true});});
 let dbPromise;
 function database(){return dbPromise??=new Promise((resolve,reject)=>{const req=indexedDB.open('jelly-studies',1);req.onupgradeneeded=()=>req.result.createObjectStore('models',{keyPath:'id'});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
 async function records(){const db=await database();return new Promise((resolve,reject)=>{const req=db.transaction('models').objectStore('models').getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
@@ -40,10 +35,10 @@ function thumbnail(subject,palette){
  const materials=[];clone.traverse(object=>{object.layers.set(0);if(!object.isMesh)return;const uniforms=object.material.uniforms;const material=new T.MeshToonMaterial({color:uniforms?.baseColor?.value?.clone()||new T.Color('#fff1db'),vertexColors:!!object.geometry.attributes.color,gradientMap:tones});object.material=material;materials.push(material);});
  scene.add(new T.HemisphereLight('#fff3dc','#a4a6ba',2));const light=new T.DirectionalLight('#fff1d7',2.2);light.position.set(-1,2,3);scene.add(light);
  const renderer=new T.WebGLRenderer({alpha:true,antialias:true});renderer.setClearColor(0,0);renderer.setSize(160,160);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.88;
- const camera=new T.OrthographicCamera(-.052,.052,.052,-.052,.001,1);camera.position.set(.10,.075,.14);camera.lookAt(0,.030,0);renderer.render(scene,camera);
+ const camera=new T.OrthographicCamera(-.052,.052,.052,-.052,.001,1);if(subject.userData.primitive)camera.position.set(.14,.085,-.06);else camera.position.set(.10,.075,.14);camera.lookAt(0,.035,0);renderer.render(scene,camera);
  const canvas=document.createElement('canvas');canvas.width=canvas.height=160;const ctx=canvas.getContext('2d');const gradient=ctx.createRadialGradient(35,30,5,70,65,150);gradient.addColorStop(0,colors.cool.getStyle());gradient.addColorStop(1,colors.accent.getStyle());ctx.fillStyle=gradient;ctx.fillRect(0,0,160,160);ctx.fillStyle='rgba(146,136,163,.16)';ctx.beginPath();ctx.ellipse(83,128,43,8,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.90;ctx.drawImage(renderer.domElement,0,0);ctx.globalAlpha=1;
  const pixels=ctx.getImageData(0,0,160,160);for(let i=0;i<pixels.data.length;i+=4){let seed=i>>>2;seed=Math.imul(seed^(seed>>>16),0x45d9f3b);seed=Math.imul(seed^(seed>>>16),0x45d9f3b);seed=((seed^(seed>>>16))>>>0)/4294967296;for(let c=0;c<3;c++){const value=pixels.data[i+c]/255;pixels.data[i+c]=(Math.floor(value*9+seed)/9*.80+value*.20)*255;}}ctx.putImageData(pixels,0,0);ctx.strokeStyle='#fff2d9';ctx.lineWidth=1.5;for(const [x,y]of [[22,31],[133,112]]){ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.stroke();}
- for(const material of materials)material.dispose();tones.dispose();renderer.dispose();return canvas.toDataURL('image/png');
+ for(const material of materials)material.dispose();tones.dispose();renderer.dispose();renderer.forceContextLoss();return canvas.toDataURL('image/png');
 }
 
 export async function prepareGeneratedModel(blob,palette){
@@ -65,15 +60,27 @@ export function createImageLibrary({art,onSelect,onAdded}){
  const strip=document.querySelector('.flavors'),add=document.createElement('button');add.className='study add-study';add.setAttribute('aria-label','添加图片生成模型');add.innerHTML='<svg viewBox="0 0 80 80" aria-hidden="true"><path d="M7 8Q40 3 73 8L74 72Q40 77 6 72Z" fill="#d9d8cc"/><path d="M24 40H56M40 24V56" stroke="#8c9c91" stroke-width="3.5" stroke-linecap="round"/></svg>';strip.append(add);
  const dialog=document.createElement('dialog');dialog.className='upload-dialog';dialog.innerHTML=`<form method="dialog"><button class="close-upload" aria-label="关闭">×</button></form><label class="image-drop" aria-label="选择图片"><input type="file" accept="image/png,image/jpeg,image/webp" aria-label="选择图片"/><span aria-hidden="true"><svg viewBox="0 0 80 80"><path d="M40 18V62M18 40H62" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></span><img alt="待建模的图片" hidden/></label><p class="upload-status" role="status" aria-live="polite"></p><progress max="100" value="0" hidden aria-label="建模进度"></progress><button class="generate-study" type="button" disabled aria-label="生成模型"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M14 40L35 19M29 18L37 26M39 8L41 14L47 16L41 18L39 24L37 18L31 16L37 14ZM17 11L18 15L22 16L18 17L17 21L16 17L12 16L16 15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="upload-error-mark" hidden role="img" aria-label="生成失败">!</span>`;document.body.append(dialog);
  const input=dialog.querySelector('[type=file]'),preview=dialog.querySelector('img'),status=dialog.querySelector('.upload-status'),generate=dialog.querySelector('.generate-study'),progress=dialog.querySelector('progress');let file,previewURL,controller,busy=false;
- add.onclick=()=>{dialog.querySelector('.upload-error-mark').hidden=true;dialog.showModal();};dialog.addEventListener('close',()=>{if(!busy)controller?.abort();});
+ add.onclick=()=>{dialog.querySelector('.upload-error-mark').hidden=true;dialog.showModal();};dialog.addEventListener('close',()=>controller?.abort());
  input.onchange=()=>{file=input.files[0];if(!file)return;dialog.querySelector('.upload-error-mark').hidden=true;if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(file);preview.src=previewURL;preview.hidden=false;status.textContent='将自动压缩图片并提取主要主体';generate.disabled=false;};
- async function install(record){if((record.meshVersion||0)<2){await serviceReady;if(apiAvailable){try{const response=await fetch(url('/api/jobs/'+record.id.replace('model-','')),{signal:AbortSignal.timeout(8000)});if(response.ok){const job=await response.json();if(job.mesh_version>=2){const downloaded=await fetch(url(job.model_url),{signal:AbortSignal.timeout(15000)});if(downloaded.ok)record={...record,blob:await downloaded.blob(),meshVersion:job.mesh_version,thumbnailVersion:0};}}}catch{}}}const model=await prepareGeneratedModel(record.blob,record.palette);const theme=art.addGenerated(record.id,model,record.palette);const thumb=record.thumbnailVersion===8?record.thumbnail:thumbnail(model.root,record.palette);const button=document.createElement('button');button.className='study generated-study';button.dataset.flavor=record.id;button.setAttribute('aria-label',record.name||'新作品');button.setAttribute('aria-pressed','false');const img=document.createElement('img');img.src=thumb;img.alt='';button.append(img);strip.insertBefore(removableStudy(button,record,{art,onSelect}),add);button.onclick=()=>onSelect(record.id);onAdded?.(theme);return {...record,thumbnail:thumb,thumbnailVersion:8};}
- generate.onclick=async()=>{if(!file||busy)return;await serviceReady;if(!apiAvailable){status.textContent='建模服务尚未连接，请稍后再试。';const mark=dialog.querySelector('.upload-error-mark');mark.hidden=false;mark.title=status.textContent;return;}dialog.querySelector('.upload-error-mark').hidden=true;busy=true;controller=new AbortController();const signal=controller.signal;generate.disabled=true;input.disabled=true;progress.hidden=false;status.textContent='正在连接建模服务…';
-  try{status.textContent='检查建模服务…';let health;try{const response=await fetch(url('/api/health'),{signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});if(response.ok)health=await response.json();}catch(error){if(signal.aborted)throw error;}if(!health?.ready)throw Error('建模服务离线：当前需要电脑上的 GPU 服务和公网隧道持续运行。');status.textContent='正在压缩图片…';const compressed=await compressModelImage(file);const body=new FormData();body.append('image',compressed);const response=await fetch(url('/api/models'),{method:'POST',body,signal});const result=await response.json();if(!response.ok)throw Error(typeof result.detail==='string'?result.detail:'图片提交失败');let job=result;const started=Date.now();while(job.status!=='complete'){if(job.status==='failed')throw Error(job.error||'生成失败，请换张图片重试');if(Date.now()-started>20*60*1000)throw Error('生成超时，请稍后再试');status.textContent=job.stage;progress.value=job.progress;await pause(1600,signal);const poll=await fetch(url('/api/jobs/'+job.id),{signal});if(!poll.ok)throw Error('无法读取生成进度');job=await poll.json();}
-   status.textContent='正在打开新作品…';const downloaded=await fetch(url(job.model_url),{signal});if(!downloaded.ok)throw Error('模型下载失败，请重试');const blob=await downloaded.blob();if(blob.size>50*1024*1024)throw Error('模型过大，暂时无法展示');const record=await install({id:'model-'+job.id,name:file.name.replace(/\.[^.]+$/,'').slice(0,40)||'新作品',palette:job.palette,meshVersion:job.mesh_version||2,blob,created:Date.now()});try{await save(record);}catch{status.textContent='作品已生成，浏览器存储空间不足，刷新后不会保留。';}onSelect(record.id);dialog.close();
-  }catch(error){if(error.name!=='AbortError'){status.textContent=error.message.includes('fetch')?'连接失败，请确认建模服务在线后重试。':error.message;const mark=dialog.querySelector('.upload-error-mark');mark.hidden=false;mark.title=status.textContent;mark.setAttribute('aria-label',status.textContent);}}
+ async function install(record){
+  const model=record.recipe?primitiveStudy(record.recipe):await prepareGeneratedModel(record.blob,record.palette);
+  const theme=art.addGenerated(record.id,model,record.palette),thumb=record.thumbnailVersion===9?record.thumbnail:thumbnail(model.root,record.palette);
+  const button=document.createElement('button');button.className='study generated-study';button.dataset.flavor=record.id;button.setAttribute('aria-label',record.name||'新作品');button.setAttribute('aria-pressed','false');
+  const img=document.createElement('img');img.src=thumb;img.alt='';button.append(img);strip.insertBefore(removableStudy(button,record,{art,onSelect}),add);button.onclick=()=>onSelect(record.id);onAdded?.(theme);
+  return {...record,thumbnail:thumb,thumbnailVersion:9};
+ }
+ generate.onclick=async()=>{
+  if(!file||busy)return;busy=true;controller=new AbortController();const signal=controller.signal;generate.disabled=true;input.disabled=true;progress.hidden=false;progress.value=0;dialog.querySelector('.upload-error-mark').hidden=true;
+  try{
+   status.textContent='正在压缩图片…';const compressed=await compressModelImage(file);signal.throwIfAborted();
+   const {analyzeObject}=await import('./local-object-analysis.js');signal.throwIfAborted();
+   const recipe=await analyzeObject(compressed,(stage,value)=>{status.textContent=stage;progress.value=value;});signal.throwIfAborted();
+   const record=await install({id:'study-'+crypto.randomUUID(),name:file.name.replace(/\.[^.]+$/,'').slice(0,40)||'新作品',recipe,palette:recipe.palette,created:Date.now()});
+   try{await save(record);}catch(error){console.warn('作品已生成，但浏览器存储失败',error);}
+   onSelect(record.id);dialog.close();
+  }catch(error){if(error.name!=='AbortError'){status.textContent=error.message.includes('fetch')?'设备端识别资源加载失败，请检查网络后重试。':error.message;const mark=dialog.querySelector('.upload-error-mark');mark.hidden=false;mark.title=status.textContent;mark.setAttribute('aria-label',status.textContent);}}
   finally{busy=false;generate.disabled=!file;input.disabled=false;progress.hidden=true;}
  };
- const restored=records().then(async saved=>{for(const record of saved){try{const installed=await install(record);if(record.thumbnailVersion!==8)await save(installed);}catch(error){console.warn('无法恢复作品',record.id,error);}}}).catch(error=>console.warn('本地作品库不可用',error));
+ const restored=records().then(async saved=>{for(const record of saved){try{const installed=await install(record);if(record.thumbnailVersion!==9)await save(installed);}catch(error){console.warn('无法恢复作品',record.id,error);}}}).catch(error=>console.warn('本地作品库不可用',error));
  return {restored};
 }

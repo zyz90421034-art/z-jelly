@@ -23,3 +23,5 @@ Additional P7 resources used for the distinct tall, faceted Kiwi cup:
 - `layout-p7.json` (published placement data)
 
 Same author and source as the P4 reference art above.
+
+Local vision weights and ImageNet labels: see public/local-vision/NOTICE.md and the accompanying Apache-2.0 / MIT licenses. These assets perform device-side recognition; generated primitive part grammars are project code.
