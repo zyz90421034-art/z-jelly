@@ -16,16 +16,10 @@ export async function compressModelImage(file){
   return new File([blob],file.name.replace(/\.[^.]*$/,'')+'.png',{type:'image/png'});
  }finally{image.close();}
 }
-let dbPromise;
-function database(){return dbPromise??=new Promise((resolve,reject)=>{const req=indexedDB.open('jelly-studies',1);req.onupgradeneeded=()=>req.result.createObjectStore('models',{keyPath:'id'});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
-async function records(){const db=await database();return new Promise((resolve,reject)=>{const req=db.transaction('models').objectStore('models').getAll();req.onsuccess=()=>resolve(req.result.sort((a,b)=>(a.created||0)-(b.created||0)));req.onerror=()=>reject(req.error);});}
-async function save(record){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('models','readwrite');tx.objectStore('models').put(record);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
-async function removeRecord(id){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('models','readwrite');tx.objectStore('models').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
-
 function removableStudy(button,record,{art,onSelect}){
  const card=document.createElement('div');card.className='generated-card';
  const remove=document.createElement('button');remove.type='button';remove.className='remove-study';remove.textContent='×';remove.setAttribute('aria-label','删除'+(record.name||'新作品'));remove.title='删除';
- remove.onclick=async event=>{event.stopPropagation();remove.disabled=true;try{await removeRecord(record.id);if(button.getAttribute('aria-pressed')==='true')onSelect('berry');art.removeGenerated(record.id);card.remove();}catch(error){remove.disabled=false;remove.title='删除失败，请重试';console.warn('无法删除作品',error);}};
+ remove.onclick=event=>{event.stopPropagation();if(button.getAttribute('aria-pressed')==='true')onSelect('berry');art.removeGenerated(record.id);card.remove();};
  card.append(button,remove);return card;
 }
 
@@ -76,11 +70,8 @@ export function createImageLibrary({art,onSelect,onAdded}){
    const {analyzeObject}=await import('./local-object-analysis.js');signal.throwIfAborted();
    const recipe=await analyzeObject(compressed,(stage,value)=>{status.textContent=stage;progress.value=value;});signal.throwIfAborted();
    const record=await install({id:'study-'+crypto.randomUUID(),name:file.name.replace(/\.[^.]+$/,'').slice(0,40)||'新作品',recipe,palette:recipe.palette,created:Date.now()});
-   try{await save(record);}catch(error){console.warn('作品已生成，但浏览器存储失败',error);}
    onSelect(record.id);dialog.close();
   }catch(error){if(error.name!=='AbortError'){status.textContent=error.message.includes('fetch')?'设备端识别资源加载失败，请检查网络后重试。':error.message;const mark=dialog.querySelector('.upload-error-mark');mark.hidden=false;mark.title=status.textContent;mark.setAttribute('aria-label',status.textContent);}}
   finally{busy=false;generate.disabled=!file;input.disabled=false;progress.hidden=true;}
  };
- const restored=records().then(async saved=>{for(const record of saved){try{const installed=await install(record);if(record.thumbnailVersion!==9)await save(installed);}catch(error){console.warn('无法恢复作品',record.id,error);}}}).catch(error=>console.warn('本地作品库不可用',error));
- return {restored};
 }
