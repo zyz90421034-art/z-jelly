@@ -28,11 +28,16 @@ export function jellyIllustrationMaterial(original,geometry){
  paint=mix(paint,floor(clamp(paint,0.,1.)*9.+.5)/9.,.42);
  float light=dot(n,normalize(vec3(-.45,.85,.5)))*.5+.5;light=mix(.72,1.04,smoothstep(.18,.88,light));
  vec3 body=paint*light;vec3 nv=normalize(mat3(viewMatrix)*n);vec2 uv=gl_FragCoord.xy/resolution;
- vec3 transmitted=texture2D(backdrop,clamp(uv+nv.xy*.018,vec2(.002),vec2(.998))).rgb;
- transmitted*=mix(vec3(1.),mix(paint,vec3(1.),.35),.3);
- vec3 color=mix(transmitted,body,.93+rim*.035);
- color+=vec3(.93,.85,.73)*rim*.15;
- vec3 h=normalize(view+normalize(vec3(-.45,.85,.5)));color+=vec3(1.,.92,.77)*pow(max(dot(n,h),0.),48.)*.16;
+ // Composite refraction explicitly: alpha blending would lose colour at overlaps.
+ float thickness=sqrt(facing);
+ vec2 bend=nv.xy*(.012+.022*thickness);
+ vec3 transmitted=texture2D(backdrop,clamp(uv+bend,vec2(.002),vec2(.998))).rgb;
+ vec3 absorption=mix(vec3(1.),mix(paint,vec3(1.),.28),.24+.20*thickness);
+ transmitted*=absorption;
+ float density=.58+.10*thickness+.15*rim;
+ vec3 color=mix(transmitted,body,density);
+ color+=mix(paint,vec3(1.,.94,.86),.70)*rim*.22;
+ vec3 h=normalize(view+normalize(vec3(-.45,.85,.5)));color+=vec3(1.,.95,.86)*pow(max(dot(n,h),0.),64.)*.25;
  gl_FragColor=vec4(color,1.);}`});
 }
 
