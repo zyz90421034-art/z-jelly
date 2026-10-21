@@ -32,9 +32,9 @@ export function jellyIllustrationMaterial(original,geometry){
  float thickness=sqrt(facing);
  vec2 bend=nv.xy*(.012+.022*thickness);
  vec3 transmitted=texture2D(backdrop,clamp(uv+bend,vec2(.002),vec2(.998))).rgb;
- vec3 absorption=mix(vec3(1.),mix(paint,vec3(1.),.28),.24+.20*thickness);
+ vec3 absorption=mix(vec3(1.),mix(paint,vec3(1.),.28),.12+.14*thickness);
  transmitted*=absorption;
- float density=.58+.10*thickness+.15*rim;
+ float density=.30+.08*thickness+.20*rim;
  vec3 color=mix(transmitted,body,density);
  color+=mix(paint,vec3(1.,.94,.86),.70)*rim*.22;
  vec3 h=normalize(view+normalize(vec3(-.45,.85,.5)));color+=vec3(1.,.95,.86)*pow(max(dot(n,h),0.),64.)*.25;
