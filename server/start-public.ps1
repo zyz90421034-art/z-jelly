@@ -16,6 +16,19 @@ if (-not $env:HTTPS_PROXY) {
 function Test-ModelService([string]$address) {
     try { return (Invoke-RestMethod "$address/api/health" -TimeoutSec 8).ready -eq $true } catch { return $false }
 }
+function Read-SharedLog([string]$path) {
+    $stream = $null
+    $reader = $null
+    try {
+        $stream = [IO.File]::Open($path, [IO.FileMode]::Open, [IO.FileAccess]::Read, ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
+        $reader = [IO.StreamReader]::new($stream)
+        return $reader.ReadToEnd()
+    } catch [IO.IOException] { return '' }
+    finally {
+        if ($reader) { $reader.Dispose() }
+        elseif ($stream) { $stream.Dispose() }
+    }
+}
 if (-not (Test-ModelService 'http://127.0.0.1:7861')) {
     $shellPath = (Get-Process -Id $PID).Path
     $scriptPath = Join-Path $PSScriptRoot 'start.ps1'
@@ -34,13 +47,31 @@ if ($configured -and (Test-ModelService $configured)) {
 }
 $tunnelPath = Join-Path $projectRoot '.tools/cloudflared.exe'
 if (-not (Test-Path -LiteralPath $tunnelPath)) { throw 'Missing .tools/cloudflared.exe. Install cloudflared from its official source.' }
+# Reuse the tunnel left running if a previous launcher stopped while reading its log.
+$existing = Get-CimInstance Win32_Process -Filter "Name='cloudflared.exe'" | Where-Object {
+    $_.ExecutablePath -eq $tunnelPath -and $_.CommandLine -match '--url\s+http://127\.0\.0\.1:7861(?:\s|$)'
+}
+if ($existing) {
+    $earliest = ($existing.CreationDate | Sort-Object | Select-Object -First 1).AddSeconds(-5)
+    $logs = Get-ChildItem -LiteralPath $logRoot -Filter 'tunnel-*-error.log' | Where-Object { $_.CreationTime -ge $earliest } | Sort-Object LastWriteTime -Descending
+    foreach ($log in $logs) {
+        $candidate = [regex]::Match((Read-SharedLog $log.FullName), 'https://[a-z0-9-]+\.trycloudflare\.com').Value
+        if ($candidate -and (Test-ModelService $candidate)) {
+            [IO.File]::WriteAllText($configPath, (@{url=$candidate} | ConvertTo-Json -Compress), [Text.UTF8Encoding]::new($false))
+            Write-Host "Public model service is ready: $candidate"
+            Write-Host 'Existing tunnel reused. Send this URL back to Codex to update GitHub Pages.'
+            exit 0
+        }
+    }
+    throw 'A tunnel is already running but not ready. Check its tunnel log before starting another.'
+}
 $tunnelLog = Join-Path $logRoot "tunnel-$stamp-error.log"
 Start-Process -FilePath $tunnelPath -ArgumentList @('tunnel','--url','http://127.0.0.1:7861','--protocol','http2','--no-autoupdate') -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "tunnel-$stamp.log") -RedirectStandardError $tunnelLog | Out-Null
 $deadline = (Get-Date).AddSeconds(90)
 $publicAddress = $null
 while (-not $publicAddress) {
     if (Test-Path $tunnelLog) {
-        $match = [regex]::Match([IO.File]::ReadAllText($tunnelLog), 'https://[a-z0-9-]+\.trycloudflare\.com')
+        $match = [regex]::Match((Read-SharedLog $tunnelLog), 'https://[a-z0-9-]+\.trycloudflare\.com')
         if ($match.Success) { $publicAddress = $match.Value }
     }
     if ((Get-Date) -gt $deadline) { throw "Tunnel did not start. Check $tunnelLog" }
