@@ -12,11 +12,11 @@ export function subjectColor(palette){
 
 export function modelPalette(palette){
  const chosen=subjectColor(palette);
- // Split complementary pigments separate the backdrop from translucent subjects.
- const coolHue=(chosen.h+.38)%1,accentHue=(chosen.h+.62)%1;
- const lightness=chosen.l>.76?.65:.76;
+ // Keep both pigments near the subject; use lightness to separate the silhouette.
+ const coolHue=(chosen.h+.055)%1,accentHue=(chosen.h+.945)%1;
+ const lightness=chosen.l>.76?.64:.78;
  return {
-  cool:new T.Color().setHSL(coolHue,T.MathUtils.clamp(chosen.s*.75,.50,.64),lightness,T.SRGBColorSpace),
-  accent:new T.Color().setHSL(accentHue,T.MathUtils.clamp(chosen.s*.85,.56,.70),lightness+(chosen.l>.76?.08:-.07),T.SRGBColorSpace),
+  cool:new T.Color().setHSL(coolHue,T.MathUtils.clamp(chosen.s*.65,.42,.58),lightness,T.SRGBColorSpace),
+  accent:new T.Color().setHSL(accentHue,T.MathUtils.clamp(chosen.s*.82,.54,.68),lightness+(chosen.l>.76?.09:-.09),T.SRGBColorSpace),
  };
 }
