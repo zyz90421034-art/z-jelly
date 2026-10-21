@@ -11,10 +11,12 @@ export function subjectColor(palette){
 }
 
 export function modelPalette(palette){
- const chosen=subjectColor(palette),hue=(chosen.h+(chosen.h<.5?.07:-.07)+1)%1;
- const lightness=chosen.l>.76?.64:.71;
+ const chosen=subjectColor(palette);
+ // Split complementary pigments separate the backdrop from translucent subjects.
+ const coolHue=(chosen.h+.38)%1,accentHue=(chosen.h+.62)%1;
+ const lightness=chosen.l>.76?.65:.76;
  return {
-  cool:new T.Color().setHSL(hue,T.MathUtils.clamp(chosen.s*.85,.60,.76),lightness,T.SRGBColorSpace),
-  accent:new T.Color().setHSL((hue+.92)%1,T.MathUtils.clamp(chosen.s*.9,.62,.78),lightness+.025,T.SRGBColorSpace),
+  cool:new T.Color().setHSL(coolHue,T.MathUtils.clamp(chosen.s*.75,.50,.64),lightness,T.SRGBColorSpace),
+  accent:new T.Color().setHSL(accentHue,T.MathUtils.clamp(chosen.s*.85,.56,.70),lightness+(chosen.l>.76?.08:-.07),T.SRGBColorSpace),
  };
 }
