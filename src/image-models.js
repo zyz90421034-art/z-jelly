@@ -18,7 +18,7 @@ export async function compressModelImage(file){
 }
 let dbPromise;
 function database(){return dbPromise??=new Promise((resolve,reject)=>{const req=indexedDB.open('jelly-studies',1);req.onupgradeneeded=()=>req.result.createObjectStore('models',{keyPath:'id'});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
-async function records(){const db=await database();return new Promise((resolve,reject)=>{const req=db.transaction('models').objectStore('models').getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function records(){const db=await database();return new Promise((resolve,reject)=>{const req=db.transaction('models').objectStore('models').getAll();req.onsuccess=()=>resolve(req.result.sort((a,b)=>(a.created||0)-(b.created||0)));req.onerror=()=>reject(req.error);});}
 async function save(record){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('models','readwrite');tx.objectStore('models').put(record);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
 async function removeRecord(id){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('models','readwrite');tx.objectStore('models').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
 

@@ -31,8 +31,8 @@ export async function analyzeObject(file,onProgress=()=>{}){
  const scores=await onDevice(async()=>{const output=tf.tidy(()=>classifier.predict(tf.browser.fromPixels(crop).toFloat().div(127.5).sub(1).expandDims(0)));try{return await output.data();}finally{output.dispose();}});
  const predictions=Array.from(scores,(probability,index)=>({className:labels[index]||'',probability})).sort((a,b)=>b.probability-a.probability).slice(0,8);
  await tf.nextFrame();let face=null;
- const faces=await onDevice(()=>detector.estimateFaces(canvas,false,false,false));
- if(faces.length){const f=faces[0],[left,top]=f.topLeft,[right,bottom]=f.bottomRight,fw=right-left,fh=bottom-top;face={probability:Number(f.probability[0]),area:fw*fh/(canvas.width*canvas.height)};analysis.skin=sampleRegion(ctx,left+fw*.25,top+fh*.3,fw*.5,fh*.45);analysis.hair=sampleRegion(ctx,left,top-fh*.12,fw,fh*.23);analysis.shirt=sampleRegion(ctx,left,top+fh*1.3,fw,Math.min(fh*.8,canvas.height-top-fh*1.3));}
+ const faces=await onDevice(()=>detector.estimateFaces(canvas,false,false,true));
+ if(faces.length){const f=faces[0],[left,top]=f.topLeft,[right,bottom]=f.bottomRight,fw=right-left,fh=bottom-top;face={probability:Number(f.probability?.[0]??0),area:fw*fh/(canvas.width*canvas.height)};analysis.skin=sampleRegion(ctx,left+fw*.25,top+fh*.3,fw*.5,fh*.45);analysis.hair=sampleRegion(ctx,left,top-fh*.12,fw,fh*.23);analysis.shirt=sampleRegion(ctx,left,top+fh*1.3,fw,Math.min(fh*.8,canvas.height-top-fh*1.3));}
  const semantic=chooseObject(predictions,face);onProgress('组合卡通几何体',80);await tf.nextFrame();
  return objectRecipe(semantic,analysis);
 }
