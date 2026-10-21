@@ -36,7 +36,12 @@ export function objectRecipe(semantic,analysis){
  const cylinder=(name,color,p,s,r)=>add(name,'cylinder',color,p,s,r);
  const cone=(name,color,p,s,r)=>add(name,'cone',color,p,s,r);
  const eyes=(y,z,spacing=.13)=>{for(const side of [-1,1])ball('eye',dark,[side*spacing,y,z],[.045,.055,.035]);};
- if(kind==='animal'){
+ if(kind==='animal'&&/horse|sorrel|zebra/.test(variant)){
+  const coat=/zebra/.test(variant)?cream:main,legColor=/white.{0,25}(legs?|feet)|(?:legs?|feet).{0,25}white/.test(variant)?cream:coat;
+  ball('body',coat,[0,.52,0],[.43,.45,.76]);add('neck','capsule',coat,[0,.83,.23],[.23,.45,.25],[.15,0,0]);ball('head',coat,[0,1.05,.35],[.32,.33,.44]);ball('muzzle',accent,[0,.98,.59],[.27,.20,.26]);
+  ball('mane',dark,[0,.88,.075],[.13,.43,.18]);ball('tail',dark,[0,.44,-.48],[.13,.48,.17]);
+  for(const side of [-1,1]){cone('ear',coat,[side*.09,1.29,.32],[.10,.22,.12]);ball('eye',dark,[side*.15,1.08,.48],[.04,.05,.035]);for(const z of [-.25,.25]){add('leg','capsule',legColor,[side*.16,.23,z],[.13,.43,.14]);ball('hoof',dark,[side*.16,.035,z+.02],[.15,.08,.19]);}}
+ }else if(kind==='animal'){
   const bunny=/rabbit|hare/.test(variant),elephant=/elephant/.test(variant),long=/giraffe/.test(variant),horse=/horse|sorrel|zebra/.test(variant),fox=/fox|wolf|coyote|dingo/.test(variant),bear=/bear|panda|koala|teddy/.test(variant);
   ball('body',main,[0,.39,0],[.62,.57,.50]);ball('chest',horse?main:cream,[0,.45,.20],[.30,.36,.15]);
   ball('head',main,[0,long?1.02:horse?.92:.78,.09],horse?[.45,.49,.61]:[.61,.53,.49]);
@@ -56,19 +61,23 @@ export function objectRecipe(semantic,analysis){
   ball('torso',shirt,[0,.45,0],[.48,.47,.30]);ball('head',skin,[0,.88,0],[.57,.56,.46]);ball('hair',hair,[0,1.06,-.03],[.59,.29,.48]);
   for(const side of [-1,1]){ball('ear',skin,[side*.29,.88,0],[.09,.13,.10]);ball('arm',shirt,[side*.30,.44,0],[.17,.38,.20]);ball('hand',skin,[side*.32,.27,.02],[.15,.15,.15]);cylinder('leg',accent,[side*.14,.17,0],[.18,.29,.20]);ball('shoe',dark,[side*.14,.035,.06],[.22,.11,.30]);}
   eyes(.90,.22,.11);ball('nose',skin,[0,.84,.25],[.07,.08,.07]);ball('smile','#bf7e80',[0,.77,.21],[.11,.025,.025]);
+  if(/\b(hat|cap|helmet)\b/.test(variant)){cylinder('hat',accent,[0,1.18,-.02],[.59,.12,.47]);box('hat-brim',accent,[0,1.14,.25],[.47,.05,.27]);}
+  if(/glasses|spectacles/.test(variant))for(const side of [-1,1])add('glasses','torus',dark,[side*.11,.90,.245],[.17,.14,.08]);
  }else if(kind==='burger'){
   cylinder('lower-bun','#e9b979',[0,.16,0],[.88,.20,.74]);ball('top-bun','#edbd7c',[0,.64,0],[.92,.39,.79]);
   cylinder('patty','#9a6951',[0,.34,0],[.91,.17,.77]);cylinder('tomato','#da8877',[0,.45,0],[.91,.075,.78]);box('cheese','#eed275',[0,.40,0],[.96,.055,.81]);
   for(let i=0;i<7;i++){const a=i/7*Math.PI*2;ball('lettuce',leaf,[Math.sin(a)*.35,.50,Math.cos(a)*.30],[.30,.075,.23]);}
   for(let i=0;i<7;i++){const a=i*2.4;ball('sesame',cream,[Math.sin(a)*.27,.81-Math.abs(Math.sin(a))*.035,Math.cos(a)*.20],[.028,.018,.065]);}
+  if(/onion/.test(variant))add('onion','torus','#dfbfdb',[0,.545,0],[.58,.52,.22],[Math.PI/2,0,0]);
+  if(/pickle|cucumber/.test(variant))for(let i=0;i<3;i++)ball('pickle','#86ac65',[(i-1)*.18,.54,.12],[.23,.055,.25]);
  }else if(kind==='fruit'){
   if(/banana/.test(variant)){for(let i=0;i<4;i++)ball('banana','#e6d477',[(i-1.5)*.15,.27+Math.abs(i-1.5)*.075,0],[.32,.28,.32]);}
   else if(/pineapple/.test(variant)){ball('fruit',main,[0,.46,0],[.65,.78,.65]);for(let i=0;i<5;i++)cone('crown',leaf,[(i-2)*.09,.99,0],[.17,.50,.16],[0,0,(i-2)*-.25]);}
   else {ball('fruit',main,[0,.44,0],[.75,.78,.70]);cylinder('stem',dark,[0,.88,0],[.055,.18,.055]);ball('leaf',leaf,[.16,.90,0],[.28,.08,.13]);if(/strawberry/.test(variant))for(let i=0;i<7;i++)ball('seed',cream,[Math.sin(i*2.4)*.24,.30+i*.045,.30],[.025,.04,.02]);}
  }else if(kind==='bottle'){
   const cup=/cup|mug|goblet|beaker|glass/.test(variant);
-  cylinder('body',main,[0,.37,0],[.62,.69,.62]);
-  if(cup){add('rim','torus',cream,[0,.72,0],[.62,.62,.62],[Math.PI/2,0,0]);add('handle','torus',accent,[.40,.42,0],[.35,.44,.27],[0,0,0]);cylinder('drink',accent,[0,.72,0],[.48,.035,.48]);}
+  if(cup)add('body','cup',main,[0,.37,0],[.62,.69,.62]);else cylinder('body',main,[0,.37,0],[.62,.69,.62]);
+  if(cup){add('rim','torus',cream,[0,.72,0],[.62,.62,.62],[Math.PI/2,0,0]);if(/mug|handle|coffee|teacup/.test(variant))add('handle','torus',accent,[.40,.42,0],[.35,.44,.27],[0,0,0]);cylinder('drink',accent,[0,.65,0],[.48,.035,.48]);}
   else {ball('shoulder',main,[0,.70,0],[.61,.27,.61]);cylinder('neck',main,[0,.91,0],[.24,.36,.24]);cylinder('cap',accent,[0,1.12,0],[.29,.12,.29]);box('label',cream,[0,.41,.315],[.36,.29,.025]);}
  }else if(kind==='plant'){
   cylinder('pot',accent,[0,.20,0],[.51,.38,.51]);cylinder('soil',dark,[0,.40,0],[.45,.04,.45]);
@@ -104,6 +113,8 @@ export function primitiveStudy(recipe){
   else if(part.type==='cylinder')g=new T.CylinderGeometry(.5,.5,1,12,1);
   else if(part.type==='cone')g=new T.ConeGeometry(.5,1,10,1);
   else if(part.type==='torus')g=new T.TorusGeometry(.43,.07,6,16);
+  else if(part.type==='capsule'){g=new T.CapsuleGeometry(.25,.5,3,8);g.scale(2,1,2);}
+  else if(part.type==='cup')g=new T.LatheGeometry([new T.Vector2(0,-.5),new T.Vector2(.32,-.5),new T.Vector2(.38,-.44),new T.Vector2(.5,.46),new T.Vector2(.5,.5),new T.Vector2(.46,.5),new T.Vector2(.34,-.39),new T.Vector2(0,-.39)],16);
   else g=new RoundedBoxGeometry(1,1,1,2,.12);
   g.scale(...part.size);g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...part.rotation)));g.translate(...part.position);g.rotateY(Math.PI*.63);
   const material=jellyIllustrationMaterial({color:new T.Color(part.color)},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.layers.set(1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);

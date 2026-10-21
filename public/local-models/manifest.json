@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "files": {
+    "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx": {
+      "bytes": 229119140,
+      "sha256": "6d64c0fdce1c3515c40a08ff8e398bfbc0b2e961ae46d1b84b91e6a7b269b9d1",
+      "chunks": [
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-000",
+          "bytes": 8388608,
+          "sha256": "dadaa008ccdd57263928b5bc9cf4aaa8695b87a9725e5df3404cff5b4d3b98b0"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-001",
+          "bytes": 8388608,
+          "sha256": "b43055252acd88d0df841cac27496932d8cd9312d29990e124f3c39e85cf9a57"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-002",
+          "bytes": 8388608,
+          "sha256": "96247d1f98eedcb1d7bdfe5933119f6f34433963bec8bb78fc961188048a5b85"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-003",
+          "bytes": 8388608,
+          "sha256": "785f3d6c8dc245f4af061b762ee1b3a24ebfdb5fbcb94d8416227a0764ae05d0"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-004",
+          "bytes": 8388608,
+          "sha256": "5eccc89fb98275961097f2724006453dcbbc9f9a3f401ce26cb2b6e760756683"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-005",
+          "bytes": 8388608,
+          "sha256": "b07461c3fc45811bdf56b1adac9da271c1d44facacf769cc6b998d9c5d8a4ebd"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-006",
+          "bytes": 8388608,
+          "sha256": "a9360409166387db72534c3131b415d3e59e9b38242aedd6405d2da73f25c2db"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-007",
+          "bytes": 8388608,
+          "sha256": "1df04dfcdc1831e1057d95151e15657f6807350e53e03b309f531e3cb7721643"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-008",
+          "bytes": 8388608,
+          "sha256": "4225df361a0feec007947c7b40b496eb9a328b994be48aa36ea1ff92e2c3b8ec"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-009",
+          "bytes": 8388608,
+          "sha256": "ecf8cb35a584838d29ac0467d4793f59fcd73231718996e5b7326ce41a45aee2"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-010",
+          "bytes": 8388608,
+          "sha256": "d3a84bc1ae6e403032a90048dd73fb8e8ccd9ed29004a10baa7aaaaccc3bfc21"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-011",
+          "bytes": 8388608,
+          "sha256": "18d5a78543b73f2b205a5b191fa305f1d0669510db6dcd2707c50aaef77a138f"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-012",
+          "bytes": 8388608,
+          "sha256": "2b14ad172d1517d96504436828b531590c2b11b2f55465492994b4a2e16a8edd"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-013",
+          "bytes": 8388608,
+          "sha256": "6759ce38699a0b66234775165131dfcb8f0092b79026fab71d5a69c5e4bcb176"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-014",
+          "bytes": 8388608,
+          "sha256": "4b024f964ba00b7a9dba3998f1328f26d56951941f90592a7f49bf47f32d15e4"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-015",
+          "bytes": 8388608,
+          "sha256": "52c8e809eaaa89cea935a8c89ecc6ab7d5e0a7202a358cd175356b34a92301dd"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-016",
+          "bytes": 8388608,
+          "sha256": "4b5962b057c1df12b28be904444c5eb652354a53efaa221d581d867eb4d02e94"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-017",
+          "bytes": 8388608,
+          "sha256": "0a902d1350e574180aab556d71f71fcaf1cf95544fdd0ce1a676535e59c2031c"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-018",
+          "bytes": 8388608,
+          "sha256": "faae2589b97f0e6487d7dc5522bcd254a03fcf07a63d7d9bd77520ac42068152"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-019",
+          "bytes": 8388608,
+          "sha256": "3493695a36b7c2379c3ce2704def8029c66299be44a544da9c10745387f3fb75"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-020",
+          "bytes": 8388608,
+          "sha256": "ff01a1cc6db7cbcc1f85f6d6f93b0d2ce4f10ed0c10e478bdef37f6977b31f93"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-021",
+          "bytes": 8388608,
+          "sha256": "c49a1b0d9f43478c1d8f92c2d63ff5fef337971364ab9b9890a2209d66107466"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-022",
+          "bytes": 8388608,
+          "sha256": "c9ec47a980d55e00a9594f61bca1e9e39b9bed4e02aff88ee617b83a2da3b140"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-023",
+          "bytes": 8388608,
+          "sha256": "cfac90eb727eeb4b24cbdeb0f93bf21d0b96b091421404a2c817db3b17fa6a5e"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-024",
+          "bytes": 8388608,
+          "sha256": "848c51c5639a93e5d2b16a2e7f6d5d919998b40eec2cb98fb3532de4d3b89ceb"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-025",
+          "bytes": 8388608,
+          "sha256": "fcbc6ef88796ed00f9d0350239c54a0b21c66a69bb76601728f9958fa2386080"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-026",
+          "bytes": 8388608,
+          "sha256": "b30585a3b64912f171d32af8274baf7606e694b43810e3dc5ef78766ae97d9a0"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/decoder_model_merged_q4.onnx.part-027",
+          "bytes": 2626724,
+          "sha256": "fa2965224680766fe502c945447568e23116a9a24110ac3105b31da9889fe575"
+        }
+      ]
+    },
+    "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx": {
+      "bytes": 47309344,
+      "sha256": "f5f14887bf9b756d9fff2e412d474f0b5403e91f33b23460c9411f0ca54d945b",
+      "chunks": [
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-000",
+          "bytes": 8388608,
+          "sha256": "c218d87ac6db06a85c57db90aa4f006ace2d8456eac29f5c2b8f5cfbc4a44d7a"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-001",
+          "bytes": 8388608,
+          "sha256": "e7e307230d3f4b81c8e3b0868bf1cf1f3fbe69d424f85251d3b39eaf3bb27867"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-002",
+          "bytes": 8388608,
+          "sha256": "e7733ccbf7eaa3e7743503946ed84afdbf6bbfc818c0f5218447278b256ebc0e"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-003",
+          "bytes": 8388608,
+          "sha256": "679d4e54e04f513669235dc57a178c8540a01f8cd912adb6cb6123a95743b981"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-004",
+          "bytes": 8388608,
+          "sha256": "1e9ef35754cc4a3cfb5a0e88dfbdf3dfd5625e9b44fcf77d3ef230950171191d"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/embed_tokens_quantized.onnx.part-005",
+          "bytes": 5366304,
+          "sha256": "1b70b74c23e5235132b5f675753887dfa2cb40c3caeef52574445a1d0afb0df6"
+        }
+      ]
+    },
+    "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx": {
+      "bytes": 66734107,
+      "sha256": "179812d5b1315edbe3e7164ea3d847c52723692e83ac9c770a5234962663fcad",
+      "chunks": [
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-000",
+          "bytes": 8388608,
+          "sha256": "e173fd92fedb1615f3fc2f816b5a9d4cb6950b544870869dc06155e6ebfc7ab3"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-001",
+          "bytes": 8388608,
+          "sha256": "ec19f22174d354e21f14663de12010cefc0b7f854f83437a80f018fd51ac9990"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-002",
+          "bytes": 8388608,
+          "sha256": "525baa75b16fdf1e606cc203a383e36d4c982ab3b9d9b645268504f73522f35e"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-003",
+          "bytes": 8388608,
+          "sha256": "7dddb52b2b66070a82167ebe4568ad4ecdef2f8e1bfaa104ed5adc5255895649"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-004",
+          "bytes": 8388608,
+          "sha256": "b0f261724f4817793c3e66f8176733dd8e90aed7c77ef180704ae368f2d012cd"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-005",
+          "bytes": 8388608,
+          "sha256": "5819a169acc28330fe2ce082b07494de899d3cd7f978673579d274200274ae8d"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-006",
+          "bytes": 8388608,
+          "sha256": "4692c459f6707924329b3a2fdb21dbc44f0aacd106a79016ca4a3d4845916ff3"
+        },
+        {
+          "path": "vision-500m-a7da5b9/onnx/vision_encoder_q4.onnx.part-007",
+          "bytes": 8013851,
+          "sha256": "f8489301810aec8820c82140c6f48373b348c12f18f54122b605ee23c46f5184"
+        }
+      ]
+    }
+  },
+  "models": [
+    {
+      "id": "vision-500m-a7da5b9",
+      "repo": "HuggingFaceTB/SmolVLM-500M-Instruct",
+      "revision": "a7da5b986cb59b408707209984f360a5f4ad7e47"
+    }
+  ]
+}

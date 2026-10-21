@@ -25,3 +25,5 @@ Additional P7 resources used for the distinct tall, faceted Kiwi cup:
 Same author and source as the P4 reference art above.
 
 Local vision weights and ImageNet labels: see public/local-vision/NOTICE.md and the accompanying Apache-2.0 / MIT licenses. These assets perform device-side recognition; generated primitive part grammars are project code.
+
+The current visual-language workflow uses SmolVLM-500M-Instruct, self-hosted as ONNX shards. See [public/local-models/NOTICE.md](public/local-models/NOTICE.md) for the pinned source, license and inference runtime. The prior MobileNet/BlazeFace assets are retained as legacy resources and are not loaded by the current frontend.

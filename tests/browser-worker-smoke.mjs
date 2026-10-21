@@ -1,0 +1,11 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const worker=fs.readdirSync('dist/assets').find(name=>name.startsWith('local-vlm.worker-')&&name.endsWith('.js'));
+if(!worker)throw Error('Build the website before running the worker smoke check.');
+const surface=new(class DedicatedWorkerGlobalScope {})();
+const globals={console,URL,URLSearchParams,TextEncoder,TextDecoder,Headers,Request,Response,Blob,File,AbortController,DOMException,ReadableStream,WritableStream,TransformStream,WebAssembly,crypto,performance,setTimeout,clearTimeout,setInterval,clearInterval,structuredClone,atob,btoa,navigator:{userAgent:'worker smoke test'},location:{href:'http://127.0.0.1/',hostname:'127.0.0.1'}};
+Object.assign(surface,globals);const context=vm.createContext({...globals,self:surface});
+const module=new vm.SourceTextModule(fs.readFileSync('dist/assets/'+worker,'utf8'),{context,initializeImportMeta(meta){meta.url='http://127.0.0.1/assets/'+worker;}});
+await module.link(()=>{throw Error('The worker unexpectedly has an external static module dependency.');});
+await module.evaluate();
+if(typeof surface.onmessage!=='function')throw Error('The model worker did not initialize its message handler.');
+console.log('Browser worker initializes without Node dependencies or a GPU.');

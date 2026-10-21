@@ -1,1 +1,1 @@
-{"name":"jelly-lab","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1 --port 5173","build":"vite build"},"dependencies":{"@tensorflow-models/blazeface":"0.1.0","@tensorflow/tfjs":"4.22.0","three":"0.180.0"},"devDependencies":{"vite":"7.1.7"}}
+{"name":"jelly-lab","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"vite --host 127.0.0.1 --port 5173","build":"vite build"},"dependencies":{"@huggingface/transformers":"4.3.1","three":"0.180.0"},"devDependencies":{"vite":"7.1.7"}}
