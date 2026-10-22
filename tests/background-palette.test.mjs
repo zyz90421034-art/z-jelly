@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {modelPalette} from '../src/background-palette.js';
+import {modelPalette,BACKGROUND_PALETTES} from '../src/background-palette.js';
 const recipe=color=>({parts:[{name:'drink',role:'clear-liquid',color,size:[1,1,1]}]});
 const hsl=color=>color.getHSL({},T.SRGBColorSpace);
 const hueGap=(a,b)=>Math.min(Math.abs(a-b),1-Math.abs(a-b));
@@ -9,11 +9,14 @@ test('liquid drives the generated background even when the fruit palette changes
  const a=modelPalette([[255,170,0],[240,45,70]],recipe('#f7bba4')),b=modelPalette([[80,180,40],[60,70,180]],recipe('#f7bba4'));
  assert.equal(a.cool.getHexString(),b.cool.getHexString());assert.equal(a.accent.getHexString(),b.accent.getHexString());
 });
-test('colored drinks get restrained related pigments separated from their liquid hue',()=>{
+test('generated backdrops come from independent art-directed palettes, with no analogous hue restriction',()=>{
  for(const hex of ['#f7bba4','#df6e95','#b9d971','#73b6da','#603b2d']){
-  const theme=modelPalette([],recipe(hex)),liquid=hsl(new T.Color(hex));
-  for(const pigment of [theme.cool,theme.accent]){const bg=hsl(pigment);assert.ok(bg.s>=.40&&bg.s<=.55);assert.ok(bg.l>=.78);assert.ok(hueGap(bg.h,liquid.h)>.05&&hueGap(bg.h,liquid.h)<=.201);}
+  const theme=modelPalette([],recipe(hex));
+  assert.ok(BACKGROUND_PALETTES.some(([,a,b])=>theme.cool.getHexString()===a.slice(1)&&theme.accent.getHexString()===b.slice(1)));
  }
+ const warm=modelPalette([],recipe('#f7bba4')),blue=modelPalette([],recipe('#73b6da'));
+ assert.notEqual(warm.cool.getHexString(),blue.cool.getHexString());
+ assert.ok(hueGap(hsl(warm.cool).h,hsl(new T.Color('#f7bba4')).h)>.25);
 });
 test('very pale milk gets a slightly deeper colored wash instead of a near-white background',()=>{
  const theme=modelPalette([],recipe('#fff9ed'));assert.ok(hsl(theme.cool).l<.81);assert.ok(hsl(theme.accent).s>.3);

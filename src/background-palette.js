@@ -15,29 +15,42 @@ function lab(c){
  return [.2104542553*l+.793617785*m-.0040720468*s,1.9779984951*l-2.428592205*m+.4505937099*s,.0259040371*l+.7827717662*m-.808675766*s];
 }
 function separation(a,b){const x=lab(a),y=lab(b);return Math.hypot(...x.map((n,i)=>n-y[i]));}
+// Independent art-directed color washes. Model colors only rank their contrast;
+// they never become the backdrop pigments themselves.
+export const BACKGROUND_PALETTES=Object.freeze([
+ ['sky','#b6d9ed','#c6bee5'],
+ ['mint','#b2ddd6','#c0d8ed'],
+ ['lilac','#c4bae5','#e1c6dc'],
+ ['rose','#edc3d2','#eed7c0'],
+ ['cream','#efdab5','#edc5b5'],
+ ['sage','#d3dfb5','#b6d9cc'],
+ ['blue-depth','#86abc8','#ad9bd3'],
+]);
 function coloredBackdrop(palette,blueprint){
- const liquids=(blueprint.parts||[]).filter(p=>['clear-liquid','liquid'].includes(p.role)).sort((a,b)=>b.size.reduce((n,v)=>n*v,1)-a.size.reduce((n,v)=>n*v,1));
+ const parts=blueprint.parts||[],area=p=>{const axes=p.size.slice().sort((a,b)=>b-a);return axes[0]*axes[1];};
+ const liquids=parts.filter(p=>['clear-liquid','liquid'].includes(p.role)).sort((a,b)=>area(b)-area(a));
  let source;if(liquids[0])source=new T.Color(liquids[0].color);else{const chosen=subjectColor(palette);source=new T.Color().setHSL(chosen.h,chosen.s,chosen.l,T.SRGBColorSpace);}
- const hsl={};source.getHSL(hsl,T.SRGBColorSpace);
- // Select a related cooler hue, rather than letting a saturated piece of fruit
- // choose a background that disappears into the liquid. Keep the background
- // pastel, with restrained chroma and an explicit foreground separation score.
- const direction=hsl.h<.17||hsl.h>.78?-1:1;
- const pale=hsl.l>.90||hsl.s<.14&&hsl.l>.84;
+ const solid=parts.filter(p=>p.fruitType||['soft','ceramic'].includes(p.role)).sort((a,b)=>area(b)-area(a)).slice(0,6);
+ const total=solid.reduce((sum,p)=>sum+area(p),0);
+ const pigments=solid.map(p=>({color:new T.Color(p.color),weight:area(p)/total}));
  const predicted=bg=>{
   if(!liquids.length)return source;
   if(liquids[0].role!=='clear-liquid')return source.clone().multiplyScalar(.9);
   const out=source.clone();for(const ch of ['r','g','b'])out[ch]=bg[ch]*Math.pow(source[ch]*.9+.1,.935)*.79+source[ch]*.21;return out;
  };
+ const original=lab(source),originalChroma=Math.hypot(original[1],original[2]);
  let best=null;
- for(const spread of [.18,.20])for(const light of (pale?[.73,.77]:[.82,.85,.88])){
-  const cool=new T.Color().setHSL((hsl.h+direction*spread+1)%1,.50,light,T.SRGBColorSpace);
-  const accent=new T.Color().setHSL((hsl.h+direction*.09+1)%1,.48,light-.035,T.SRGBColorSpace);
-  const stops=[cool,cool.clone().lerp(accent,.5),accent];
-  const contrast=Math.min(...stops.map(bg=>separation(bg,predicted(bg))));
-  // Prefer a light colored wash; use the paler option only when needed for
-  // separation. Penalize excessive near-white washout and distant hue shifts.
-  const score=Math.min(contrast,.135)-(light>.85?.012:0)-(spread>.18?.002:0);
+ for(const [id,a,b]of BACKGROUND_PALETTES){
+  const cool=new T.Color(a),accent=new T.Color(b),stops=[cool,cool.clone().lerp(accent,.5),accent];
+  const visibleContrast=Math.min(...stops.map(bg=>separation(bg,predicted(bg))));
+  const bodyContrast=pigments.length?pigments.reduce((sum,p)=>sum+p.weight*Math.min(...stops.map(bg=>separation(bg,p.color))),0):Math.min(...stops.map(bg=>separation(bg,source)));
+  const center=cool.clone().lerp(accent,.5),foreground=lab(predicted(center)),background=lab(center);
+  const foregroundChroma=Math.hypot(foreground[1],foreground[2]);
+  const hueDifference=originalChroma>.025?Math.acos(T.MathUtils.clamp((original[1]*background[1]+original[2]*background[2])/(originalChroma*Math.max(.001,Math.hypot(background[1],background[2]))),-1,1))/Math.PI:0;
+  const colorLoss=originalChroma>.04&&foregroundChroma<originalChroma*.38?.025:0;
+  // Contrast and hue separation matter more than matching the subject. Reserve
+  // the deeper wash for near-white subjects; normal subjects keep a light stage.
+  const score=visibleContrast*.64+bodyContrast*.36+hueDifference*.055-colorLoss-(id==='blue-depth'?.025:0);
   if(!best||score>best.score)best={cool,accent,score};
  }
  return {cool:best.cool,accent:best.accent};
