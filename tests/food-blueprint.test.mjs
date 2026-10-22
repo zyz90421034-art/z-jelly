@@ -31,9 +31,12 @@ test('whole cake and triangular slice retain layer and fruit counts instead of b
  const cake=buildFoodBlueprint('a cake','A round chocolate cake with three sponge layers, pink filling, white icing and four strawberries.',palette);
  assert.equal(cake.kind,'cake');assert.equal(cake.parts.filter(p=>p.name.startsWith('sponge-')).length,3);
  assert.equal(cake.parts.filter(p=>p.name.startsWith('fruit-')).length,4);
+ assert.ok(cake.parts.filter(p=>p.name.startsWith('fruit-')).every(p=>p.color==='#dc6883'),'cream color must not cross "and four" into strawberry color');
  const slice=buildFoodBlueprint('cake','A triangular slice of yellow cake with two layers and white cream.',palette);
  assert.equal(slice.kind,'cake-slice');assert.ok(slice.parts.some(p=>p.type==='wedge'));assert.ok(!slice.parts.some(p=>p.name==='vessel'));
  assert.notDeepEqual(cake.parts,slice.parts);
+ const glazed=buildFoodBlueprint('cake slice','A slice with pinkish-red glaze on top and two cake layers.',palette);
+ assert.equal(glazed.parts.find(p=>p.name==='icing')?.color,'#e98fa8');
 });
 test('parfait separates hollow glass and colored filling; undisclosed decoration is omitted',()=>{
  const r=buildFoodBlueprint('parfait','A tall clear glass with three layers of pink pudding and white cream.',palette);

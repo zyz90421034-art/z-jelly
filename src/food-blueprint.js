@@ -3,8 +3,11 @@ const COLORS={white:'#f6e6cb',cream:'#f5dcb3',brown:'#a76c49',chocolate:'#865847
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function affirmative(text){return text.toLowerCase().replace(/\b(?:does not have|doesn't have|has no|without)\s+(?:a |any )?(?:handle|plate|saucer|cream|fruit|foam)/g,'').replace(/\b(?:no|without|not|absent)\s+(?:(?:a|any|visible)\s+)?[\w-]+(?:\s+(?:handle|plate|saucer|cream|fruit|foam))?/g,'');}
 function colorNear(text,nouns,fallback){
+ text=text.replace(/\b(pink|red|green|blue|yellow|brown|purple|orange)ish\b/gi,'$1').replace(/\b(pink|red|green|blue|yellow|brown|purple|orange)-(pink|red|green|blue|yellow|brown|purple|orange)\b/gi,'$1');
  const terms=Object.keys(COLORS).join('|');
- const match=text.match(new RegExp(`\\b(${terms})\\s+(?:[\\w-]+\\s+){0,2}(?:${nouns})\\b`,'i'));
+ // Do not cross conjunctions/counts: "cream and four strawberries" is not cream-colored fruit.
+ const modifiers='ceramic|glass|coffee|sponge|frosted|iced|plastic|paper|chocolate|colored|coloured|light|dark';
+ const match=text.match(new RegExp(`\\b(${terms})\\s+(?:(?:${modifiers})\\s+){0,2}(?:${nouns})\\b`,'i'));
  const reverse=text.match(new RegExp(`\\b(?:${nouns})\\s+(?:is|looks|appears|are|being)\\s+(?:to be\\s+)?(?:light |dark )?(${terms})\\b`,'i'));
  return match?COLORS[match[1].toLowerCase()]:reverse?COLORS[reverse[1].toLowerCase()]:fallback;
 }
@@ -23,7 +26,7 @@ export function buildFoodBlueprint(subject,description,palette){
  const add=(id,type,color,position,size,role='soft',extra={})=>{parts.push({name:id,type,color,position,size,rotation:[0,0,0],role,...extra});};
  const evidence=(feature,present)=>{if(present)observations.push({feature,source:description});return present;};
  const plate=evidence('plate',/saucer|plate|dish/.test(text));
- const cream=colorNear(text,'cream|frosting|icing',COLORS.cream);
+ const cream=colorNear(text,'cream|frosting|icing|glaze',COLORS.cream);
  const fruitColor=colorNear(text,'berries|berry|cherries|cherry|strawberries|strawberry',COLORS.red);
  const berry=evidence('fruit topping',/strawberr|blueberr|raspberr|cherr|berr/.test(text));
  const isBlue=/blueberr/.test(text),isCherry=/cherr/.test(text);
@@ -71,7 +74,7 @@ export function buildFoodBlueprint(subject,description,palette){
    if(i<layers-1){add('filling-'+i,type,filling,[0,y+band/2,0],[width*1.01,band,depth*1.01],'soft');y+=band;}
   }
   bodyTop=y;
-  if(evidence('icing',/icing|frosting|cream|ganache/.test(text))){add('icing',type,cream,[0,y+.035,0],[width*1.02,.07,depth*1.02]);bodyTop+=.07;}
+  if(evidence('icing',/icing|frosting|cream|ganache|glaze/.test(text))){add('icing',type,cream,[0,y+.035,0],[width*1.02,.07,depth*1.02]);bodyTop+=.07;}
   if(evidence('piped cream',/whip|piped|rosette|dollop/.test(text))){const n=slice?2:6;for(let i=0;i<n;i++){const a=i/n*Math.PI*2;add('cream-rosette-'+i,'swirl',cream,[slice?0:Math.sin(a)*.32,bodyTop+.065,slice?-.22+i*.27:Math.cos(a)*.32],[.18,.15,.18]);}}
   observations.push({feature:layers+' sponge layers',source:description});
  }
