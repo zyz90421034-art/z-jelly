@@ -182,6 +182,8 @@ export function createPaintingPipeline(renderer,scene,camera,art){
   camera.layers.set(0);renderer.setRenderTarget(opaque);renderer.render(scene,camera);
   for(const mesh of art.customMeshes||[]){mesh.material.uniforms.backdrop.value=opaque.texture;mesh.material.uniforms.resolution.value.copy(uniforms.resolution.value);}
   if(art.jelly)art.jelly.material.uniforms.backdrop.value=opaque.texture;camera.layers.enable(1);renderer.setRenderTarget(liquid);renderer.render(scene,camera);
+  // Container walls sample the already rendered contents, never their own render target.
+  for(const mesh of art.customMeshes||[])if(mesh.layers.isEnabled(2))mesh.material.uniforms.backdrop.value=liquid.texture;
   if(art.body)art.body.material.uniforms.backdrop.value=liquid.texture;if(art.lid)art.lid.material.uniforms.backdrop.value=liquid.texture;camera.layers.enable(2);renderer.setRenderTarget(glass);renderer.render(scene,camera);
   renderer.setRenderTarget(null);renderer.render(screen,ortho);
  },dispose(){for(const t of [opaque,liquid,glass,backdropA,backdropB])t.dispose();blurMaterial.dispose();backgroundMaterial.dispose();blurQuad.geometry.dispose();backgroundQuad.geometry.dispose();scene.remove(backgroundQuad);shader.dispose();}};

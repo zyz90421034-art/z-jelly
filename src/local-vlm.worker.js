@@ -28,7 +28,14 @@ self.onmessage=async({data})=>{
   model=await Idefics3ForConditionalGeneration.from_pretrained(id,{device:'wasm',dtype:{embed_tokens:'q8',vision_encoder:'q4',decoder_model_merged:'q4'}});
   const image=await RawImage.fromBlob(data.file);
   const subject=await generateText(model,processor,image,'What is the main object in this image? Answer with only its name.',20,46,56);
-  const description=await generateText(model,processor,image,'Describe the main object, its visible parts, colors and pose in two sentences. Ignore the background.',100,56,90);
+  const isCake=/cake|torte|gateau/i.test(subject),isDrink=/coffee|espresso|cappuccino|latte|mocha|tea\b|mug|cup/i.test(subject)&&!isCake;
+  const isDessert=/parfait|sundae|trifle|pudding|custard|jelly|gelatin|ice.?cream/i.test(subject);
+  // The 500M VLM gives better evidence to short, concrete questions than a long checklist.
+  let description=await generateText(model,processor,image,isDrink?'Describe the cup and what is inside it.':isCake||isDessert?'Describe this image.':'Describe the main object, its visible parts, colors and pose in two sentences. Ignore the background.',isCake||isDessert?150:120,56,80);
+  if(isCake||isDrink||isDessert){
+   const detail=await generateText(model,processor,image,isCake?'How many cake layers are visible?':isDrink?'Does the cup have a handle?':'Describe the dessert layers.',isDessert?80:25,80,92);
+   description+=' '+detail;
+  }
   if(subject.length<2||description.length<12)throw Error('没有看清照片中的主体，请换一张主体清楚的图片。');
   progress('编写建模提示词与组合部件…',94);
   const prompt=buildModelingPrompt(subject,description,data.palette),recipe=compileModelingPrompt(prompt);

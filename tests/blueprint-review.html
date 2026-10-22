@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Blueprint visual verification</title>
+<style>body{margin:0;background:#f8f5f0;font:14px system-ui}nav{display:flex;gap:8px;padding:12px;flex-wrap:wrap}button{padding:8px;border:1px solid #c7bdcb;border-radius:8px;background:#fff6f1}canvas{width:100vw;height:72vh;display:block}img{width:80px;height:80px}#status{padding:8px}</style>
+<nav id="cases"></nav><input id="file" type="file" accept="image/*"><button id="generate">Analyze photo</button><span id="status">Loading…</span><div id="thumbs"></div><canvas id="scene"></canvas>
+<script type="module">
+import * as T from 'three';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {createArtwork,createPaintingPipeline} from '../src/art-v2.js';
+import {primitiveStudy} from '../src/semantic-recipes.js';import {buildFoodBlueprint} from '../src/food-blueprint.js';
+import {studyThumbnail} from '../src/study-thumbnail.js';import {analyzeObject} from '../src/local-object-analysis.js';
+const renderer=new T.WebGLRenderer({canvas:document.querySelector('canvas'),antialias:false});renderer.setPixelRatio(1.5);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.88;
+const scene=new T.Scene(),camera=new T.PerspectiveCamera(35.5,1,.003,3);camera.position.set(.19,.15,-.08);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.035,0);controls.update();
+const art=await createArtwork(renderer,scene),pipeline=createPaintingPipeline(renderer,scene,camera,art);
+const palette=[[213,142,112],[225,162,185]],fixtures=[['Coffee','coffee','A short blue mug with a handle on the right and coffee foam with latte art on a white saucer.'],['Whole cake','cake','A round chocolate cake with three sponge layers, pink filling, white icing, piped cream and four strawberries.'],['Cake slice','cake slice','A triangular slice of yellow cake with two sponge layers, pink filling, white icing and one strawberry on a plate.'],['Parfait','parfait','A tall clear glass with three layers of pink pudding and white cream, whipped cream and three cherries.']];
+function select(id){art.setFlavor(id);document.querySelector('#status').textContent=id;}
+function install(recipe,id){const model=primitiveStudy(recipe);art.addGenerated(id,model,recipe.palette);const img=new Image();img.src=studyThumbnail(model.root,recipe.palette);img.alt=id;document.querySelector('#thumbs').append(img);select(id);}
+for(const [id,name,caption] of fixtures){install(buildFoodBlueprint(name,caption,palette),id);const b=document.createElement('button');b.textContent=id;b.onclick=()=>select(id);document.querySelector('#cases').append(b);}
+for(const id of ['berry','matcha']){const theme=art.themes[id],img=new Image();img.src=studyThumbnail(theme.root,palette);img.alt=id;document.querySelector('#thumbs').append(img);}
+select('Coffee');
+document.querySelector('#generate').onclick=async()=>{const status=document.querySelector('#status');try{const recipe=await analyzeObject(document.querySelector('#file').files[0],(text,n)=>status.textContent=text+' '+Math.round(n)+'%');install(recipe,'photo-'+Date.now());status.textContent=JSON.stringify({subject:recipe.subject,description:recipe.description,kind:recipe.kind,parts:recipe.parts.map(p=>p.name),uncertainties:recipe.uncertainties});}catch(e){status.textContent=e.message;}};
+function resize(){const w=innerWidth,h=innerHeight*.72;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();pipeline.resize(w,h);}addEventListener('resize',resize);resize();renderer.setAnimationLoop(()=>{controls.update();pipeline.render();});
+</script>

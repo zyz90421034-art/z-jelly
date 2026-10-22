@@ -38,3 +38,13 @@ The viewer applies the shared translucent jelly material, physics, Q thumbnail a
 `src/vlm-runtime.js` registers only the Idefics3 architecture through a model-specific SDK adapter, and the Vite configuration excludes optional Node/GPU inference dependencies. Internal SDK imports are version-pinned and must be revalidated when upgrading Transformers.js.
 
 The original artwork before this feature is retained on branch [`snapshot/pastel-jelly-2026-10-20`](https://github.com/zyz90421034-art/z-jelly/tree/snapshot/pastel-jelly-2026-10-20).
+
+## Food scene blueprints (2026-10-22)
+
+Coffee/cappuccino/tea cups, whole cakes, cake slices and cup desserts now use a separate evidence-to-blueprint path. A food-specific visual follow-up asks about component colors, layers, vessel shape, handles, plates, foam and toppings. `src/food-blueprint.js` converts the captions into a serializable part inventory with dimensions, material roles, construction order, spatial relations, observations and uncertainty notes. Named colors come from the recognized component descriptions; food background palettes derive from those parts rather than the entire photograph. Unsupported legacy categories still use the earlier part grammars.
+
+The compiler supports hollow lathed profiles, curved tubes/handles, extruded cake wedges, layered volumes and piped swirls. Liquid profiles taper to stay within the vessel. Glass and ceramic walls render after the contents and sample their completed image, while liquid, sponge/cream and fruit have separate material densities. These are stylized translucent materials, not physical fluid simulation. The shared thumbnail illustrator projects the real component silhouettes into painted color blocks for both original and uploaded studies; it no longer mixes hand-authored SVG cards with toon screenshots.
+
+Validation checks numeric bounds, duplicate parts, finite geometry, part budgets and coffee containment. This is not an automatic visual similarity judge. Captions are still produced by the same 500M local VLM, and the blueprint compiler is constrained: it can miss a detail, miscount layers or fruit, and cannot reconstruct arbitrary topology or exact photographic proportions. Absent/unmentioned decorations are omitted; unspecified layer/fruit counts use noted design estimates. No cloud inference or larger model download was added. Food recognition adds a targeted inference pass and can take longer on slow devices.
+
+Run `node --test tests/*test.mjs`, `npm run build`, then `node --experimental-vm-modules tests/browser-worker-smoke.mjs`. During local development, `/tests/blueprint-review.html` provides four visual fixtures plus the actual photo analysis path; this diagnostic page is not part of the deployed build.

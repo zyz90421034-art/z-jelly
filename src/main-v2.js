@@ -5,6 +5,7 @@ import {CupInteraction} from './interaction.js';
 import {JellyVolume} from './physics-v2.js';
 import './style.css';
 import {createImageLibrary} from './image-models.js';
+import {studyThumbnail as paintThumbnail} from './study-thumbnail.js';
 
 const canvas=document.querySelector('#scene'),notice=document.querySelector('#notice');
 const v=new T.Vector3(),a=new T.Vector3(),b=new T.Vector3(),q=new T.Quaternion();
@@ -59,6 +60,10 @@ async function boot(){
  camera.position.set(Math.sin(az)*Math.cos(elevation)*distance,.027+Math.sin(elevation)*distance,Math.cos(az)*Math.cos(elevation)*distance);
  controls=new OrbitControls(camera,canvas);controls.target.set(0,.027,0);controls.enableDamping=true;controls.dampingFactor=.08;controls.rotateSpeed=.7;controls.zoomSpeed=.8;controls.panSpeed=.8;controls.enablePan=true;controls.minDistance=.11;controls.maxDistance=.6;controls.minPolarAngle=T.MathUtils.degToRad(1);controls.maxPolarAngle=T.MathUtils.degToRad(82);controls.update();
  art=await createArtwork(renderer,scene);if(disposed)return;
+ for(const [id,theme] of Object.entries(art.themes)){
+  const button=document.querySelector('[data-flavor="'+id+'"]');if(!button)continue;
+  const image=document.createElement('img');image.alt='';image.src=paintThumbnail(theme.root,id==='berry'?[[203,119,150],[152,195,219]]:[[153,184,95],[228,191,126]]);button.replaceChildren(image);
+ }
  pipeline=createPaintingPipeline(renderer,scene,camera,art);
  art.setFlavor(currentFlavor);configureTheme();
  createImageLibrary({art,onSelect:setFlavor});

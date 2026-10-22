@@ -109,7 +109,14 @@ export function primitiveStudy(recipe){
  const root=new T.Group(),meshes=[];root.userData.primitive=true;
  for(const part of recipe.parts){
   let g;
-  if(part.type==='ellipsoid')g=new T.SphereGeometry(.5,12,8);
+  if(part.type==='lathe')g=new T.LatheGeometry(part.profile.map(([x,y])=>new T.Vector2(x,y)),24);
+  else if(part.type==='wedge'){
+   const shape=new T.Shape();shape.moveTo(0,.5);shape.lineTo(-.43,-.34);shape.quadraticCurveTo(0,-.66,.43,-.34);shape.closePath();
+   g=new T.ExtrudeGeometry(shape,{depth:1,bevelEnabled:true,bevelSize:.015,bevelThickness:.015,bevelSegments:2,steps:1,curveSegments:12});g.translate(0,0,-.5);g.rotateX(Math.PI/2);
+  }else if(part.type==='arc'||part.type==='swirl'){
+   const points=[];for(let i=0;i<=40;i++){const t=i/40;if(part.type==='arc'){const a=-Math.PI*.64+t*Math.PI*1.28;points.push(new T.Vector3((part.side||1)*(.05+.45*Math.cos(a)),.5*Math.sin(a),0));}else{const a=t*Math.PI*5,r=.43*(1-t);points.push(new T.Vector3(Math.cos(a)*r,t-.5,Math.sin(a)*r));}}
+   g=new T.TubeGeometry(new T.CatmullRomCurve3(points),40,part.type==='arc'?.10:.085,6,false);
+  }else if(part.type==='ellipsoid')g=new T.SphereGeometry(.5,12,8);
   else if(part.type==='cylinder')g=new T.CylinderGeometry(.5,.5,1,12,1);
   else if(part.type==='cone')g=new T.ConeGeometry(.5,1,10,1);
   else if(part.type==='torus')g=new T.TorusGeometry(.43,.07,6,16);
@@ -117,10 +124,11 @@ export function primitiveStudy(recipe){
   else if(part.type==='cup')g=new T.LatheGeometry([new T.Vector2(0,-.5),new T.Vector2(.32,-.5),new T.Vector2(.38,-.44),new T.Vector2(.5,.46),new T.Vector2(.5,.5),new T.Vector2(.46,.5),new T.Vector2(.34,-.39),new T.Vector2(0,-.39)],16);
   else g=new RoundedBoxGeometry(1,1,1,2,.12);
   g.scale(...part.size);g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...part.rotation)));g.translate(...part.position);g.rotateY(Math.PI*.63);
-  const material=jellyIllustrationMaterial({color:new T.Color(part.color)},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.layers.set(1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
+  const material=jellyIllustrationMaterial({color:new T.Color(part.color),role:part.role},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.userData.role=part.role||'soft';mesh.layers.set(['glass','ceramic'].includes(part.role)?2:1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
  }
  const bounds=new T.Box3().setFromObject(root),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3()),scale=.082/Math.max(size.x,size.y,size.z);
  for(const mesh of meshes){mesh.geometry.translate(-center.x,-bounds.min.y,-center.z);mesh.geometry.scale(scale,scale,scale);}
  const dimensions=new T.Box3().setFromObject(root).getSize(new T.Vector3());
+ root.userData.blueprint=recipe;
  return {root,meshes,height:dimensions.y,radius:Math.max(dimensions.x,dimensions.z)/2};
 }

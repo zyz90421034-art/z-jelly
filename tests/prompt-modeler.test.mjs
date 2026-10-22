@@ -14,7 +14,7 @@ test('the generated modeling prompt compiles into distinct volumetric object par
   assert.equal(recipe.description,description);assert.equal(recipe.modelingPrompt,prompt);assert.ok(recipe.parts.length>=4);
   const study=primitiveStudy(recipe),bounds=new T.Box3().setFromObject(study.root);assert.ok(Number.isFinite(bounds.max.y));assert.ok(Math.abs(bounds.min.y)<1e-6);
   if(name==='horse')assert.equal(recipe.parts.filter(p=>p.name==='leg').length,4);
-  if(name==='coffee mug')assert.ok(recipe.parts.some(p=>p.type==='cup'));
+  if(name==='coffee mug')assert.ok(recipe.parts.some(p=>p.name==='vessel'&&p.type==='lathe'));
   for(const mesh of study.meshes){mesh.geometry.dispose();mesh.material.dispose();}
  }
 });

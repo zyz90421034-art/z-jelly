@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "There is a coffee cup in the image.",
+    "description": "The image shows a cup filled with coffee on a saucer. The coffee appears to be freshly brewed, suggesting that the coffee might have been recently made. The coffee has a light frothy top, indicating that it was steamed or whipped up during preparation. There is also a sprinkle of ground cinnamon on top of the coffee. The coffee is poured into the black cup, which is placed on a white saucer.\n\nThe background of the image is a wooden surface, likely a tabletop or a countertop. The wooden surface provides a rustic feel to the scene.\n\n### Analysis and Yes, the cup has a handle.",
+    "expectedKind": "coffee-cup",
+    "source": "https://commons.wikimedia.org/wiki/File:A_cappuccino.jpg",
+    "runtime": "SmolVLM-500M-Instruct q8/q4, native CPU, 2026-10-22"
+  },
+  {
+    "subject": "There is a piece of cake on a plate.",
+    "description": "The image depicts a slice of cake on a white plate placed on a white surface. The cake is topped with various toppings, including strawberries and cream cheese frosting. The cake has layers, with the bottom layer being light pink or white, followed by a layer of strawberry-flavored cream cheese frosting. This frosting is topped with a thin layer of red sauce, which appears to be either strawberry sauce or a similar reddish-colored substance. The topmost layer of the cake is covered in a thick layer of pink or white frosting, which might be additional topping or decoration.\n\nThe plate is plain white, making it easy to see the cake's contents. The background is out of focus, so the focus remains on There are two cake layers in the image.",
+    "expectedKind": "cake-slice",
+    "source": "https://commons.wikimedia.org/wiki/File:Strawberry_Cake.JPG",
+    "runtime": "SmolVLM-500M-Instruct q8/q4, native CPU, 2026-10-22"
+  }
+]

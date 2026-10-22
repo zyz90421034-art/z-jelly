@@ -1,5 +1,5 @@
 import * as T from 'three';
-import {modelPalette} from './background-palette.js';
+import {studyThumbnail as thumbnail} from './study-thumbnail.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {jellyIllustrationMaterial,softenGeometry,stylizeVertexColors} from './generated-material.js';
 import {primitiveStudy} from './semantic-recipes.js';
@@ -21,18 +21,6 @@ function removableStudy(button,record,{art,onSelect}){
  const remove=document.createElement('button');remove.type='button';remove.className='remove-study';remove.textContent='×';remove.setAttribute('aria-label','删除'+(record.name||'新作品'));remove.title='删除';
  remove.onclick=event=>{event.stopPropagation();if(button.getAttribute('aria-pressed')==='true')onSelect('berry');art.removeGenerated(record.id);card.remove();};
  card.append(button,remove);return card;
-}
-
-function thumbnail(subject,palette){
- const scene=new T.Scene(),colors=modelPalette(palette),clone=subject.clone(true);clone.visible=true;clone.scale.set(1.06,.92,1.06);scene.add(clone);
- const tones=new T.DataTexture(new Uint8Array([155,155,155,255,196,196,196,255,228,228,228,255,250,250,250,255]),4,1);tones.needsUpdate=true;tones.minFilter=tones.magFilter=T.NearestFilter;
- const materials=[];clone.traverse(object=>{object.layers.set(0);if(!object.isMesh)return;const uniforms=object.material.uniforms;const material=new T.MeshToonMaterial({color:uniforms?.baseColor?.value?.clone()||new T.Color('#fff1db'),vertexColors:!!object.geometry.attributes.color,gradientMap:tones});object.material=material;materials.push(material);});
- scene.add(new T.HemisphereLight('#fff3dc','#a4a6ba',2));const light=new T.DirectionalLight('#fff1d7',2.2);light.position.set(-1,2,3);scene.add(light);
- const renderer=new T.WebGLRenderer({alpha:true,antialias:true});renderer.setClearColor(0,0);renderer.setSize(160,160);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.88;
- const camera=new T.OrthographicCamera(-.052,.052,.052,-.052,.001,1);if(subject.userData.primitive)camera.position.set(.14,.085,-.06);else camera.position.set(.10,.075,.14);camera.lookAt(0,.035,0);renderer.render(scene,camera);
- const canvas=document.createElement('canvas');canvas.width=canvas.height=160;const ctx=canvas.getContext('2d');const gradient=ctx.createRadialGradient(35,30,5,70,65,150);gradient.addColorStop(0,colors.cool.getStyle());gradient.addColorStop(1,colors.accent.getStyle());ctx.fillStyle=gradient;ctx.fillRect(0,0,160,160);ctx.fillStyle='rgba(146,136,163,.16)';ctx.beginPath();ctx.ellipse(83,128,43,8,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.90;ctx.drawImage(renderer.domElement,0,0);ctx.globalAlpha=1;
- const pixels=ctx.getImageData(0,0,160,160);for(let i=0;i<pixels.data.length;i+=4){let seed=i>>>2;seed=Math.imul(seed^(seed>>>16),0x45d9f3b);seed=Math.imul(seed^(seed>>>16),0x45d9f3b);seed=((seed^(seed>>>16))>>>0)/4294967296;for(let c=0;c<3;c++){const value=pixels.data[i+c]/255;pixels.data[i+c]=(Math.floor(value*9+seed)/9*.80+value*.20)*255;}}ctx.putImageData(pixels,0,0);ctx.strokeStyle='#fff2d9';ctx.lineWidth=1.5;for(const [x,y]of [[22,31],[133,112]]){ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-4);ctx.lineTo(x,y+4);ctx.stroke();}
- for(const material of materials)material.dispose();tones.dispose();renderer.dispose();renderer.forceContextLoss();return canvas.toDataURL('image/png');
 }
 
 export async function prepareGeneratedModel(blob,palette){
@@ -58,10 +46,10 @@ export function createImageLibrary({art,onSelect,onAdded}){
  input.onchange=()=>{file=input.files[0];if(!file)return;dialog.querySelector('.upload-error-mark').hidden=true;if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(file);preview.src=previewURL;preview.hidden=false;status.textContent='首次需载入约 350 MB 本地模型，建议使用 Wi-Fi';generate.disabled=false;};
  async function install(record){
   const model=record.recipe?primitiveStudy(record.recipe):await prepareGeneratedModel(record.blob,record.palette);
-  const theme=art.addGenerated(record.id,model,record.palette),thumb=record.thumbnailVersion===9?record.thumbnail:thumbnail(model.root,record.palette);
+  const theme=art.addGenerated(record.id,model,record.palette),thumb=record.thumbnailVersion===10?record.thumbnail:thumbnail(model.root,record.palette);
   const button=document.createElement('button');button.className='study generated-study';button.dataset.flavor=record.id;button.setAttribute('aria-label',record.name||'新作品');button.setAttribute('aria-pressed','false');
   const img=document.createElement('img');img.src=thumb;img.alt='';button.append(img);strip.insertBefore(removableStudy(button,record,{art,onSelect}),add);button.onclick=()=>onSelect(record.id);onAdded?.(theme);
-  return {...record,thumbnail:thumb,thumbnailVersion:9};
+  return {...record,thumbnail:thumb,thumbnailVersion:10};
  }
  generate.onclick=async()=>{
   if(!file||busy)return;busy=true;controller=new AbortController();const signal=controller.signal;generate.disabled=true;input.disabled=true;progress.hidden=false;progress.value=0;dialog.querySelector('.upload-error-mark').hidden=true;
