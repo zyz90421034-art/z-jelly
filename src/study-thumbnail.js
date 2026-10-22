@@ -12,10 +12,10 @@ function hull(points){
 function path(ctx,points){ctx.beginPath();for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];if(!i)ctx.moveTo((a.x+b.x)/2,(a.y+b.y)/2);const c=points[(i+2)%points.length];ctx.quadraticCurveTo(b.x,b.y,(b.x+c.x)/2,(b.y+c.y)/2);}ctx.closePath();}
 export function studyThumbnail(root,palette){
  root.updateWorldMatrix(true,true);const bounds=new T.Box3().setFromObject(root),center=bounds.getCenter(new T.Vector3()),extent=bounds.getSize(new T.Vector3()).length();
- const camera=new T.OrthographicCamera(-1,1,1,-1,.001,100),aim=new T.Vector3(1.8,1.25,2.3).normalize();
+ const camera=new T.OrthographicCamera(-1,1,1,-1,.001,100),aim=new T.Vector3(1.8,1.25,root.userData.primitive?-.78:2.3).normalize();
  camera.position.copy(center).addScaledVector(aim,Math.max(extent*3,1));camera.lookAt(center);camera.updateMatrixWorld();
  const items=[],all=[],inverse=new T.Matrix4().copy(root.matrixWorld).invert();
- root.traverse(mesh=>{if(!mesh.isMesh)return;const position=mesh.geometry.attributes.position,points=[];
+ root.traverse(mesh=>{if(!mesh.isMesh||mesh.userData.role==='contact')return;const position=mesh.geometry.attributes.position,points=[];
   const matrix=new T.Matrix4().multiplyMatrices(inverse,mesh.matrixWorld),world=new T.Matrix4().multiplyMatrices(root.matrixWorld,matrix);
   const view=new T.Vector3();let depth=0;
   for(let i=0;i<position.count;i++){view.fromBufferAttribute(position,i).applyMatrix4(world).applyMatrix4(camera.matrixWorldInverse);depth+=view.z;points.push({x:view.x,y:-view.y});}

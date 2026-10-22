@@ -1,4 +1,5 @@
 // Evidence -> dimensions -> independently editable parts. No model-written code is executed.
+import {buildCakeBlueprint} from './cake-blueprint.js';
 const COLORS={white:'#f6e6cb',cream:'#f5dcb3',brown:'#a76c49',chocolate:'#865847',pink:'#e98fa8',red:'#dc6883',green:'#9caf69',blue:'#94c8d4',yellow:'#f1cc75',purple:'#b496c9',orange:'#eeb079',black:'#785966'};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 function affirmative(text){return text.toLowerCase().replace(/\b(?:does not have|doesn't have|has no|without)\s+(?:a |any )?(?:handle|plate|saucer|cream|fruit|foam)/g,'').replace(/\b(?:no|without|not|absent)\s+(?:(?:a|any|visible)\s+)?[\w-]+(?:\s+(?:handle|plate|saucer|cream|fruit|foam))?/g,'');}
@@ -32,8 +33,9 @@ export function foodKind(subject,description=''){
  }
  return null;
 }
-export function buildFoodBlueprint(subject,description,palette){
+export function buildFoodBlueprint(subject,description,palette,imageEvidence=null){
  const kind=foodKind(subject,description);if(!kind)return null;
+ if(kind==='cake'||kind==='cake-slice')return validateBlueprint(buildCakeBlueprint(kind,subject,description,palette,imageEvidence));
  const text=affirmative(subject+' '+description),raw=(subject+' '+description).toLowerCase();
  const parts=[],observations=[],uncertainties=[];
  const add=(id,type,color,position,size,role='soft',extra={})=>{parts.push({name:id,type,color,position,size,rotation:[0,0,0],role,...extra});};
@@ -74,23 +76,8 @@ export function buildFoodBlueprint(subject,description,palette){
    if(evidence('whipped cream',/whipped cream|whipping cream|cream topping|cream on top/.test(text))){add('cream-swirl','swirl',cream,[0,bodyTop+.15,0],[w*.70,.32,w*.70]);}
   }
   observations.push({feature:tall?'tall vessel':'short vessel',source:description});
- }else{
-  const slice=kind==='cake-slice',layers=countNear(text,'layers?',2,5),h=/tall|high/.test(text)?1.0:.65;
-  if(!/\b(one|two|three|four|five|[1-5])\s+(?:\w+\s+)?layers?/.test(text))uncertainties.push('Cake layer count uses a design estimate.');
-  const sponge=colorNear(text,'sponge|cake|layers?',/chocolate|cocoa/.test(text)?COLORS.chocolate:/strawberry.flavored/.test(text)?COLORS.pink:COLORS.yellow);
-  const filling=colorNear(text,'filling|jam',/strawberr|raspberr/.test(text)?COLORS.pink:cream);
-  const type=slice?'wedge':/square|rectangular|rectangle/.test(text)?'box':'cylinder',width=slice?.95:.98,depth=slice?1.05:.98,band=.055;
-  const spongeH=(h-band*(layers-1))/layers;
-  let y=floor;
-  for(let i=0;i<layers;i++){
-   add('sponge-'+i,type,sponge,[0,y+spongeH/2,0],[width,spongeH,depth],'soft');y+=spongeH;
-   if(i<layers-1){add('filling-'+i,type,filling,[0,y+band/2,0],[width*1.01,band,depth*1.01],'soft');y+=band;}
-  }
-  bodyTop=y;
-  if(evidence('icing',/icing|frosting|cream|ganache|glaze/.test(text))){add('icing',type,cream,[0,y+.035,0],[width*1.02,.07,depth*1.02]);bodyTop+=.07;}
-  if(evidence('piped cream',/whip|piped|rosette|dollop/.test(text))){const n=slice?2:6;for(let i=0;i<n;i++){const a=i/n*Math.PI*2;add('cream-rosette-'+i,'swirl',cream,[slice?0:Math.sin(a)*.32,bodyTop+.065,slice?-.22+i*.27:Math.cos(a)*.32],[.18,.15,.18]);}}
-  observations.push({feature:layers+' sponge layers',source:description});
  }
+
  if(berry){for(let i=0;i<fruitCount;i++){
   const a=i/fruitCount*Math.PI*2,r=kind==='cake-slice'?.12:.23,x=Math.sin(a)*r,z=Math.cos(a)*r;
   add('fruit-'+i,'ellipsoid',isBlue?'#8c8bbf':fruitColor,[x,bodyTop+.12,z],[.19,isCherry?.19:.25,.19],'fruit');
@@ -125,7 +112,7 @@ export function validateBlueprint(blueprint){
  if(blueprint.version!==3||!['coffee-cup','cake','cake-slice','dessert-cup'].includes(blueprint.kind))throw Error('不支持的建模蓝图。');
  if(!Array.isArray(blueprint.parts)||!blueprint.parts.length||blueprint.parts.length>96)throw Error('建模蓝图的部件数量无效。');
  const names=new Set();for(const p of blueprint.parts){
-  if(typeof p.name!=='string'||!['lathe','wedge','arc','swirl','ellipsoid','cylinder','torus','box'].includes(p.type)||!['glass','ceramic','liquid','soft','fruit'].includes(p.role))throw Error('不支持的建模部件。');
+  if(typeof p.name!=='string'||!['lathe','wedge','arc','swirl','ellipsoid','cylinder','torus','box','cake-coating','cream-ribbon','berry','berry-half','berry-cutface','blueberry','blueberry-crown','leaf','contact-shadow'].includes(p.type)||!['glass','ceramic','liquid','soft','fruit','contact'].includes(p.role))throw Error('不支持的建模部件。');
   if(names.has(p.name))throw Error('建模蓝图含重复部件。');names.add(p.name);
   if(!/^#[\da-f]{6}$/i.test(p.color)||![p.position,p.size,p.rotation].every(v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite))||p.size.some(n=>n<=0||n>4)||p.position.some(n=>Math.abs(n)>4))throw Error('建模蓝图的尺寸或颜色无效。');
   if(p.type==='lathe'&&(!Array.isArray(p.profile)||p.profile.length<3||p.profile.length>32||!p.profile.every(v=>Array.isArray(v)&&v.length===2&&v.every(n=>Number.isFinite(n)&&Math.abs(n)<=1)&&v[0]>=0)))throw Error('容器截面无效。');

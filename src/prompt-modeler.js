@@ -14,9 +14,9 @@ export function identifySubject(label,description=''){
  throw Error('已分析照片，但这个主体的几何部件暂不受支持。请试试动物、人物、水果、甜品或常见物品。');
 }
 
-export function buildModelingPrompt(subject,description,palette){
+export function buildModelingPrompt(subject,description,palette,observations=null){
  const clean=text=>String(text).replace(/[\r\n]+/g,' ').trim();
- const blueprint=buildFoodBlueprint(clean(subject),clean(description),palette);
+ const blueprint=buildFoodBlueprint(clean(subject),clean(description),palette,observations);
  return `Subject: ${clean(subject)}\nAppearance: ${clean(description)}\nPalette: ${JSON.stringify(palette)}\nCreate a rounded low-poly cartoon study. Build separate simple volumes for the recognizable components. Preserve their colors and relative placement. Use substantial rounded shapes and cute proportions. Apply the website's colored translucent jelly material, soft highlights and elastic movement. Match the pastel painted background to the subject. No floor, pedestal or background objects.${blueprint?'\nBlueprint: '+JSON.stringify(blueprint):''}`;
 }
 

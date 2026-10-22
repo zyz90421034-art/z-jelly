@@ -4,8 +4,9 @@ import {subjectColor} from './background-palette.js';
 // The generated mesh stays three dimensional; this changes its illustration material.
 export function jellyIllustrationMaterial(original,geometry){
  const hasColor=!!geometry.attributes.color,hasMap=!!original?.map&&!!geometry.attributes.uv;
+ const contact=original?.role==='contact';
  const density={glass:.13,ceramic:.55,liquid:.40,soft:.68,fruit:.63}[original?.role]??.30;
- return new T.ShaderMaterial({vertexColors:hasColor,defines:hasMap?{PAINT_MAP:1}:{},uniforms:{bodyDensity:{value:density},backdrop:{value:null},paintMap:{value:original?.map||null},baseColor:{value:original?.color?.clone()||new T.Color('#fff1db')},resolution:{value:new T.Vector2(1,1)}},vertexShader:`
+ return new T.ShaderMaterial({transparent:contact,depthWrite:!contact,polygonOffset:contact,polygonOffsetFactor:contact?-1:0,vertexColors:hasColor,defines:{...(hasMap?{PAINT_MAP:1}:{}),...(contact?{CONTACT_SHADOW:1}:{})},uniforms:{bodyDensity:{value:density},backdrop:{value:null},paintMap:{value:original?.map||null},baseColor:{value:original?.color?.clone()||new T.Color('#fff1db')},resolution:{value:new T.Vector2(1,1)}},vertexShader:`
  varying vec3 vWorld;varying vec3 vNormal;varying vec3 vPaint;varying vec2 vPaintUv;
  void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;vNormal=normalize(mat3(modelMatrix)*normal);vPaint=vec3(1.);
  #ifdef USE_COLOR
@@ -15,10 +16,17 @@ export function jellyIllustrationMaterial(original,geometry){
  #ifdef PAINT_MAP
  vPaintUv=uv;
  #endif
+ #ifdef CONTACT_SHADOW
+ vPaintUv=uv;
+ #endif
  gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,fragmentShader:`
  uniform float bodyDensity;uniform sampler2D backdrop;uniform sampler2D paintMap;uniform vec3 baseColor;uniform vec2 resolution;
  varying vec3 vWorld;varying vec3 vNormal;varying vec3 vPaint;varying vec2 vPaintUv;
- void main(){vec3 n=normalize(vNormal),view=normalize(cameraPosition-vWorld);if(dot(n,view)<0.)n=-n;
+ void main(){
+ #ifdef CONTACT_SHADOW
+ vec2 d=vPaintUv*2.-1.;gl_FragColor=vec4(baseColor,(1.-smoothstep(.1,1.,dot(d,d)))*.18);return;
+ #endif
+ vec3 n=normalize(vNormal),view=normalize(cameraPosition-vWorld);if(dot(n,view)<0.)n=-n;
  float facing=clamp(dot(n,view),0.,1.),rim=pow(1.-facing,2.2);
  vec3 paint=baseColor*vPaint;
  #ifdef PAINT_MAP

@@ -40,8 +40,8 @@ test('coffee is supported without requiring the word cup; observed handle, foam,
 test('whole cake and triangular slice retain layer and fruit counts instead of becoming scoops',()=>{
  const cake=buildFoodBlueprint('a cake','A round chocolate cake with three sponge layers, pink filling, white icing and four strawberries.',palette);
  assert.equal(cake.kind,'cake');assert.equal(cake.parts.filter(p=>p.name.startsWith('sponge-')).length,3);
- assert.equal(cake.parts.filter(p=>p.name.startsWith('fruit-')).length,4);
- assert.ok(cake.parts.filter(p=>p.name.startsWith('fruit-')).every(p=>p.color==='#dc6883'),'cream color must not cross "and four" into strawberry color');
+ assert.equal(cake.parts.filter(p=>p.fruitType).length,4);
+ assert.ok(cake.parts.filter(p=>p.fruitType).every(p=>p.color==='#dc6883'),'cream color must not cross "and four" into strawberry color');
  const slice=buildFoodBlueprint('cake','A triangular slice of yellow cake with two layers and white cream.',palette);
  assert.equal(slice.kind,'cake-slice');assert.ok(slice.parts.some(p=>p.type==='wedge'));assert.ok(!slice.parts.some(p=>p.name==='vessel'));
  assert.notDeepEqual(cake.parts,slice.parts);

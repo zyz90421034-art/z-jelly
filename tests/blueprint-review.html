@@ -14,7 +14,10 @@ function select(id){art.setFlavor(id);document.querySelector('#status').textCont
 function install(recipe,id){const model=primitiveStudy(recipe);art.addGenerated(id,model,recipe.palette);const img=new Image();img.src=studyThumbnail(model.root,recipe.palette);img.alt=id;document.querySelector('#thumbs').append(img);select(id);}
 for(const [id,name,caption] of fixtures){install(buildFoodBlueprint(name,caption,palette),id);const b=document.createElement('button');b.textContent=id;b.onclick=()=>select(id);document.querySelector('#cases').append(b);}
 for(const id of ['berry','matcha']){const theme=art.themes[id],img=new Image();img.src=studyThumbnail(theme.root,palette);img.alt=id;document.querySelector('#thumbs').append(img);}
-select('Coffee');
+const observed=await fetch('./fixtures/measured-cake.json').then(r=>r.json());
+const measuredRecipe=buildFoodBlueprint('cake slice','A slice of cake on a plate with strawberries, blueberries, pink cream swirls and mint.',palette,observed);
+install(measuredRecipe,'Measured cake');const measuredButton=document.createElement('button');measuredButton.textContent='Measured cake';measuredButton.onclick=()=>select('Measured cake');document.querySelector('#cases').append(measuredButton);
+select('Measured cake');
 document.querySelector('#generate').onclick=async()=>{const status=document.querySelector('#status');try{const recipe=await analyzeObject(document.querySelector('#file').files[0],(text,n)=>status.textContent=text+' '+Math.round(n)+'%');install(recipe,'photo-'+Date.now());status.textContent=JSON.stringify({subject:recipe.subject,description:recipe.description,kind:recipe.kind,parts:recipe.parts.map(p=>p.name),uncertainties:recipe.uncertainties});}catch(e){status.textContent=e.message;}};
 function resize(){const w=innerWidth,h=innerHeight*.72;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();pipeline.resize(w,h);}addEventListener('resize',resize);resize();renderer.setAnimationLoop(()=>{controls.update();pipeline.render();});
 </script>

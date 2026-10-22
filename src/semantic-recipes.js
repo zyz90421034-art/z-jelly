@@ -2,6 +2,7 @@
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {jellyIllustrationMaterial} from './generated-material.js';
+import {cakePartGeometry} from './cake-geometry.js';
 
 export const RULES=[
  ['burger',/hamburger|cheeseburger/],['dessert',/ice cream|icecream|trifle|pudding|custard|cake/],
@@ -108,8 +109,8 @@ export function objectRecipe(semantic,analysis){
 export function primitiveStudy(recipe){
  const root=new T.Group(),meshes=[];root.userData.primitive=true;
  for(const part of recipe.parts){
-  let g;
-  if(part.type==='lathe')g=new T.LatheGeometry(part.profile.map(([x,y])=>new T.Vector2(x,y)),24);
+  let g=cakePartGeometry(part);
+  if(g){}else if(part.type==='lathe')g=new T.LatheGeometry(part.profile.map(([x,y])=>new T.Vector2(x,y)),24);
   else if(part.type==='wedge'){
    const shape=new T.Shape();shape.moveTo(0,.5);shape.lineTo(-.43,-.34);shape.quadraticCurveTo(0,-.66,.43,-.34);shape.closePath();
    g=new T.ExtrudeGeometry(shape,{depth:1,bevelEnabled:true,bevelSize:.015,bevelThickness:.015,bevelSegments:2,steps:1,curveSegments:12});g.translate(0,0,-.5);g.rotateX(Math.PI/2);
@@ -124,7 +125,13 @@ export function primitiveStudy(recipe){
   else if(part.type==='cup')g=new T.LatheGeometry([new T.Vector2(0,-.5),new T.Vector2(.32,-.5),new T.Vector2(.38,-.44),new T.Vector2(.5,.46),new T.Vector2(.5,.5),new T.Vector2(.46,.5),new T.Vector2(.34,-.39),new T.Vector2(0,-.39)],16);
   else g=new RoundedBoxGeometry(1,1,1,2,.12);
   g.scale(...part.size);g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...part.rotation)));g.translate(...part.position);g.rotateY(Math.PI*.63);
-  const material=jellyIllustrationMaterial({color:new T.Color(part.color),role:part.role},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.userData.role=part.role||'soft';mesh.layers.set(['glass','ceramic'].includes(part.role)?2:1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
+  const material=jellyIllustrationMaterial({color:new T.Color(part.color),role:part.role},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.userData.role=part.role||'soft';mesh.userData.sourcePart=part;mesh.layers.set(['glass','ceramic'].includes(part.role)?2:1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
+ }
+ if(Number.isFinite(recipe.supportSurface))for(const mesh of meshes){
+  const part=mesh.userData.sourcePart;if(!part.fruitType)continue;
+  mesh.geometry.computeBoundingBox();const shift=recipe.supportSurface-mesh.geometry.boundingBox.min.y-.010;
+  const id=part.name.split('-')[1];
+  for(const sibling of meshes)if(sibling.userData.role!=='contact'&&(sibling.name===part.name||sibling.name.startsWith(part.name+'-')||sibling.name.startsWith('leaf-'+id+'-')||sibling.name==='stem-'+id))sibling.geometry.translate(0,shift,0);
  }
  const bounds=new T.Box3().setFromObject(root),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3()),scale=.082/Math.max(size.x,size.y,size.z);
  for(const mesh of meshes){mesh.geometry.translate(-center.x,-bounds.min.y,-center.z);mesh.geometry.scale(scale,scale,scale);}
