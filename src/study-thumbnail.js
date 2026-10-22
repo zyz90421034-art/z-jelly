@@ -30,7 +30,7 @@ export function studyThumbnail(root,palette){
  const minX=Math.min(...all.map(p=>p.x)),maxX=Math.max(...all.map(p=>p.x)),minY=Math.min(...all.map(p=>p.y)),maxY=Math.max(...all.map(p=>p.y));
  const scale=Math.min(119/(maxX-minX),116/(maxY-minY));
  for(const item of items)for(const p of item.outline){p.x=80+(p.x-(minX+maxX)/2)*scale*1.04;p.y=83+(p.y-(minY+maxY)/2)*scale*.94;}
- const canvas=document.createElement('canvas');canvas.width=canvas.height=160;const ctx=canvas.getContext('2d'),theme=modelPalette(palette);
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=160;const ctx=canvas.getContext('2d'),theme=modelPalette(palette,root.userData.blueprint);
  const background=ctx.createRadialGradient(35,25,5,90,90,155);background.addColorStop(0,theme.cool.getStyle());background.addColorStop(1,theme.accent.getStyle());ctx.fillStyle=background;ctx.fillRect(0,0,160,160);
  ctx.fillStyle='rgba(140,119,160,.17)';ctx.beginPath();ctx.ellipse(82,137,43,6,0,0,Math.PI*2);ctx.fill();
  for(const item of items.sort((a,b)=>a.depth-b.depth)){
