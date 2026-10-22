@@ -112,7 +112,7 @@ export function validateBlueprint(blueprint){
  if(blueprint.version!==3||!['coffee-cup','cake','cake-slice','dessert-cup'].includes(blueprint.kind))throw Error('不支持的建模蓝图。');
  if(!Array.isArray(blueprint.parts)||!blueprint.parts.length||blueprint.parts.length>96)throw Error('建模蓝图的部件数量无效。');
  const names=new Set();for(const p of blueprint.parts){
-  if(typeof p.name!=='string'||!['lathe','wedge','arc','swirl','ellipsoid','cylinder','torus','box','cake-coating','cream-ribbon','berry','berry-half','berry-cutface','blueberry','blueberry-crown','leaf','contact-shadow'].includes(p.type)||!['glass','ceramic','liquid','soft','fruit','contact'].includes(p.role))throw Error('不支持的建模部件。');
+  if(typeof p.name!=='string'||!['lathe','wedge','arc','swirl','ellipsoid','cylinder','torus','box','cake-coating','cream-ribbon','berry','berry-half','berry-cutface','blueberry','blueberry-crown','leaf','contact-shadow'].includes(p.type)||!['glass','ceramic','liquid','soft','fruit','flesh','contact'].includes(p.role))throw Error('不支持的建模部件。');
   if(names.has(p.name))throw Error('建模蓝图含重复部件。');names.add(p.name);
   if(!/^#[\da-f]{6}$/i.test(p.color)||![p.position,p.size,p.rotation].every(v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite))||p.size.some(n=>n<=0||n>4)||p.position.some(n=>Math.abs(n)>4))throw Error('建模蓝图的尺寸或颜色无效。');
   if(p.type==='lathe'&&(!Array.isArray(p.profile)||p.profile.length<3||p.profile.length>32||!p.profile.every(v=>Array.isArray(v)&&v.length===2&&v.every(n=>Number.isFinite(n)&&Math.abs(n)<=1)&&v[0]>=0)))throw Error('容器截面无效。');

@@ -60,7 +60,7 @@ export function buildCakeBlueprint(kind,subject,description,palette,evidence=nul
   const berryColor=blue?C.blue:f.type==='cherry'?'#c9577c':C.red;
   add(name,blue?'blueberry':f.cut?'berry-half':'berry',berryColor,[x,top+sy/2,z],[sx,sy,sx*.85],{role:'fruit',rotation:[angle,0,f.cut?-.18:.08],fruitType:f.type,cut:!!f.cut});
   add(name+'-shadow','contact-shadow','#9a627e',[x,top+.004,z],[sx*1.05,.01,sx*.84],{role:'contact'});
-  if(f.cut){add(name+'-cut','berry-cutface','#f3a9ac',[x,top+sy/2,z+.003],[sx*.88,sy*.88,sx*.85],{role:'fruit',rotation:[angle,0,-.18]});add(name+'-core','ellipsoid','#f7d6b4',[x,top+sy*.53,z+sx*.03],[sx*.18,sy*.56,.008],{role:'fruit',rotation:[0,0,-.18]});}
+  if(f.cut){add(name+'-cut','berry-cutface','#f3a9ac',[x,top+sy/2,z+.003],[sx*.88,sy*.88,sx*.85],{role:'flesh',rotation:[angle,0,-.18]});add(name+'-core','ellipsoid','#f7d6b4',[x,top+sy*.53,z+sx*.03],[sx*.18,sy*.56,.008],{role:'flesh',rotation:[0,0,-.18]});}
   if(blue){add(name+'-crown','blueberry-crown','#aaa5c3',[x,top+sy*.94,z],[sx*.38,sy*.10,sx*.38],{role:'fruit'});}
   else if(f.type==='cherry')add('stem-'+i,'arc',C.green,[x,top+sy+.07,z],[.04,.16,.04]);
   modeledFruits.push({name,type:f.type,cut:!!f.cut,position:[x,z],sourceBounds:f.bounds||null});

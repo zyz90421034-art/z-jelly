@@ -5,7 +5,7 @@ import {subjectColor} from './background-palette.js';
 export function jellyIllustrationMaterial(original,geometry){
  const hasColor=!!geometry.attributes.color,hasMap=!!original?.map&&!!geometry.attributes.uv;
  const contact=original?.role==='contact';
- const density={glass:.13,ceramic:.55,liquid:.40,soft:.68,fruit:.63}[original?.role]??.30;
+ const density={glass:.13,ceramic:.55,liquid:.40,soft:.68,fruit:.63,flesh:.84}[original?.role]??.30;
  return new T.ShaderMaterial({transparent:contact,depthWrite:!contact,polygonOffset:contact,polygonOffsetFactor:contact?-1:0,vertexColors:hasColor,defines:{...(hasMap?{PAINT_MAP:1}:{}),...(contact?{CONTACT_SHADOW:1}:{})},uniforms:{bodyDensity:{value:density},backdrop:{value:null},paintMap:{value:original?.map||null},baseColor:{value:original?.color?.clone()||new T.Color('#fff1db')},resolution:{value:new T.Vector2(1,1)}},vertexShader:`
  varying vec3 vWorld;varying vec3 vNormal;varying vec3 vPaint;varying vec2 vPaintUv;
  void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;vNormal=normalize(mat3(modelMatrix)*normal);vPaint=vec3(1.);

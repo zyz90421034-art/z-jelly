@@ -45,9 +45,9 @@ self.onmessage=async({data})=>{
   kind=foodKind(subject,description);let observations=null;
   if(kind==='cake'||kind==='cake-slice'){
    const crop=data.crops?.toppings?await RawImage.fromBlob(data.crops.toppings):image;
-   const toppings=await generateText(model,processor,crop,'What fruits and decorations are visible? Describe their colors and positions.',65,72,88);
+   const toppings=await generateText(model,processor,crop,data.cakeAnalysis?.reliable?'Name the fruits only.':'What fruits and decorations are visible? Describe their colors and positions.',data.cakeAnalysis?.reliable?20:65,72,88);
    description+=' '+toppings;
-   if(data.cakeAnalysis?.reliable&&data.cakeAnalysis?.frosting?.color&&!/piped|whipped|swirl|rosette/.test(description))description+=' '+await generateText(model,processor,crop,'Describe the cream around the fruits.',35,88,92);
+   if(data.cakeAnalysis?.reliable&&data.cakeAnalysis?.frosting?.color&&!/piped|whipped|swirl|rosette/.test(description))description+=' '+await generateText(model,processor,crop,'Is the cream piped into swirls or spread flat?',20,88,92);
    const cutText=data.cakeAnalysis?.reliable?null:await generateText(model,processor,image,'How many sponge cake layers are visible? Count only sponge, not cream.',20,88,92);
    if(cutText)description+=' '+cutText;
    observations={...data.cakeAnalysis,toppingsDescription:toppings};
