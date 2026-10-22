@@ -17,7 +17,8 @@ test('multicolor interior evidence can correct a generic coffee caption but leav
  const evidence={reliable:true,vessel:[10,10,80,130],fill:.82,liquidColor:'#f5b0ad',fruits:[{family:'red',color:'#e85a64',box:[20,40,22,28],center:[31,54]},{family:'green',color:'#bbd176',box:[52,70,24,26],center:[64,83]}]};
  const r=buildFoodBlueprint('a cup','A clear cup with a beverage.',palette,{drink:evidence});
  assert.equal(r.kind,'fruit-drink');assert.equal(r.parts.find(p=>p.name==='drink').color,evidence.liquidColor);
- assert.ok(r.parts.find(p=>p.name==='fruit-0').position[1]>r.parts.find(p=>p.name==='fruit-1').position[1]);
+ assert.ok(r.parts.find(p=>p.name==='fruit-0').position[0]<r.parts.find(p=>p.name==='fruit-1').position[0]);
+ assert.ok(r.contacts.every(c=>c.target==='vessel'||r.parts.some(p=>p.name===c.target&&p.fruitType)));
  assert.equal(buildFoodBlueprint('coffee','A brown coffee with white foam.',palette,{drink:{reliable:false,fruits:[]}}).kind,'coffee-cup');
 });
 test('pixel evidence measures multiple colored interior regions and rejects a plain brown drink',()=>{

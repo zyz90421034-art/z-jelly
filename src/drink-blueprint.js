@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {settleDrinkFruit} from './drink-settlement.js';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function isFruitDrink(text,evidence){
  return /\b(juice|lemonade|cocktail|fruit punch|fruit drink|sangria)\b/.test(text)||/strawberr|kiwi|blueberr|orange slice|lemon slice|fruit pieces|fruits/.test(text)&&/glass|cup|drink|beverage|liquid/.test(text)||evidence?.reliable===true&&evidence.fruits?.length>=2;
@@ -47,6 +48,7 @@ export function buildDrinkBlueprint(subject,description,palette,evidence){
   const turn=new T.Quaternion().setFromEuler(new T.Euler(...tilt));
   for(const p of parts.slice(start)){const v=new T.Vector3(...p.position).sub(new T.Vector3(x,y,z)).applyQuaternion(turn).add(new T.Vector3(x,y,z));p.position=v.toArray();const q=new T.Quaternion().setFromEuler(new T.Euler(...p.rotation)).premultiply(turn);p.rotation=new T.Euler().setFromQuaternion(q).toArray().slice(0,3);}
  }
+ const contacts=settleDrinkFruit(parts,{floor:Math.max(bottom,h*.057)+.003,radius:w*.448});
  const colors=[liquidColor,...parts.filter(p=>p.fruitType).map(p=>p.color)];
- return {version:3,engine:'local-vlm+scene-blueprint',kind:'fruit-drink',subject,description,palette:colors.map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16))),parts,relations:parts.map(p=>({part:p.name,target:p.name==='vessel'?'root':p.name==='rim'||p.name==='drink'?'vessel':'drink',relation:p.name==='rim'?'attached-to':'inside'})),observations:[{feature:'separate fruit, tinted liquid and hollow glass',source:measured?'image color regions + vessel recognition':description}],uncertainties:[evidence?.uncertainty||'Fruit count and placement are caption-based estimates.'],construction:parts.map(p=>p.name),audit:{status:'passed',checks:['liquid inside glass','interior fruit before liquid before glass'],visualSimilarity:'not automatically scored'}};
+ return {version:3,engine:'local-vlm+scene-blueprint',kind:'fruit-drink',subject,description,palette:colors.map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16))),parts,contacts,layout:'settled-on-contact',relations:parts.map(p=>({part:p.name,target:p.supportedBy|| (p.name==='vessel'?'root':p.name==='rim'||p.name==='drink'?'vessel':'drink'),relation:p.supportedBy?'resting-on':p.name==='rim'?'attached-to':'inside'})),observations:[{feature:'separate fruit, tinted liquid and hollow glass',source:measured?'image color regions + vessel recognition':description}],uncertainties:[evidence?.uncertainty||'Fruit count and placement are caption-based estimates.'],construction:parts.map(p=>p.name),audit:{status:'passed',checks:['liquid inside glass','fruit resting on cup floor or lower fruit','interior fruit before liquid before glass'],visualSimilarity:'not automatically scored'}};
 }
