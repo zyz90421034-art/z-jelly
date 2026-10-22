@@ -1,4 +1,5 @@
 import {analyzeColors} from './image-color-analysis.js';
+import {analyzeDrinkPixels} from './drink-image-analysis.js';
 import {analyzeCakePixels} from './cake-image-analysis.js';
 
 let warmWorker=null,warmTimer=null;
@@ -11,6 +12,7 @@ export async function analyzeObject(file,onProgress=()=>{},signal){
  const scale=Math.min(1,512/Math.max(bitmap.width,bitmap.height));canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
  const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),{palette}=analyzeColors(pixels.data,canvas.width,canvas.height);
+ const drinkAnalysis=analyzeDrinkPixels(pixels.data,canvas.width,canvas.height);
  const cakeAnalysis=analyzeCakePixels(pixels.data,canvas.width,canvas.height),crops={};
  if(cakeAnalysis.reliable)for(const [name,bounds]of Object.entries(cakeAnalysis.crops)){
   const [x,y,w,h]=bounds,part=document.createElement('canvas');part.width=Math.max(1,Math.round(Math.min(w,canvas.width-x)));part.height=Math.max(1,Math.round(Math.min(h,canvas.height-y)));
@@ -29,6 +31,6 @@ export async function analyzeObject(file,onProgress=()=>{},signal){
    else if(data.type==='error'){stop(true);reject(Error(data.message));}
   };
   worker.onerror=event=>{stop(true);reject(Error(event.message||'浏览器无法启动设备端建模。'));};
-  worker.postMessage({type:'analyze',file,palette,cakeAnalysis,crops,debug:location.hostname==='127.0.0.1',assetsBase:new URL(import.meta.env.BASE_URL+'local-models/',document.baseURI).href});
+  worker.postMessage({type:'analyze',file,palette,cakeAnalysis,drinkAnalysis,crops,debug:location.hostname==='127.0.0.1',assetsBase:new URL(import.meta.env.BASE_URL+'local-models/',document.baseURI).href});
  });
 }

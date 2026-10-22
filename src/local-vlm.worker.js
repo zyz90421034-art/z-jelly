@@ -41,7 +41,8 @@ self.onmessage=async({data})=>{
   const subject=await generateText(model,processor,image,'What is the main object in this image? Answer with only its name.',20,46,56);
   let kind=foodKind(subject);const subjectDone=performance.now();
   const isCake=kind==='cake'||kind==='cake-slice',isDrink=kind==='coffee-cup',isDessert=kind==='dessert-cup';
-  let description=await generateText(model,processor,image,isCake?'Is this a whole cake or a slice of cake?':isDrink?'Describe the cup in one sentence.':isDessert?'Describe the dessert in one sentence.':'Describe the main object, its visible parts and colors in two sentences. Ignore the background.',isCake?25:isDrink||isDessert?55:90,56,72);
+  const measuredDrink=isDrink&&data.drinkAnalysis?.reliable;
+  let description=measuredDrink?'A drinking glass containing colored fruit pieces and liquid.':await generateText(model,processor,image,isCake?'Is this a whole cake or a slice of cake?':isDrink?'Describe the cup in one sentence.':isDessert?'Describe the dessert in one sentence.':'Describe the main object, its visible parts and colors in two sentences. Ignore the background.',isCake?25:isDrink||isDessert?55:90,56,72);
   kind=foodKind(subject,description);let observations=null;
   if(kind==='cake'||kind==='cake-slice'){
    const crop=data.crops?.toppings?await RawImage.fromBlob(data.crops.toppings):image;
@@ -52,7 +53,8 @@ self.onmessage=async({data})=>{
    if(cutText)description+=' '+cutText;
    observations={...data.cakeAnalysis,toppingsDescription:toppings};
   }else if(kind){
-   const detail=await generateText(model,processor,image,kind==='coffee-cup'?'Describe what is inside the cup.':'Describe the dessert layers.',55,72,92);description+=' '+detail;
+   const detail=await generateText(model,processor,image,measuredDrink?'Name the fruits visible in this glass. Answer with a list.':kind==='coffee-cup'?'Name the fruits and the liquid color inside the glass. If no fruits are visible, say no fruit.':'Describe the dessert layers.',measuredDrink?32:55,72,92);description+=' '+detail;
+   if(kind==='coffee-cup')observations={drink:data.drinkAnalysis};
   }
   if(subject.length<2||description.length<12)throw Error('没有看清照片中的主体，请换一张主体清楚的图片。');
   progress('根据部件位置与层次构造…',94);

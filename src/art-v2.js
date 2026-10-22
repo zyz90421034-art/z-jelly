@@ -179,8 +179,9 @@ export function createPaintingPipeline(renderer,scene,camera,art){
   blurMaterial.uniforms.image.value=backdropB.texture;blurMaterial.uniforms.stepSize.value.set(0,softness/backdropA.height);renderer.setRenderTarget(backdropA);renderer.render(blurScene,ortho);
   art.cup.updateWorldMatrix(true,false);camera.getWorldPosition(localCamera);art.cup.worldToLocal(localCamera);
   for(const mesh of [art.jelly,art.body,art.lid])if(mesh)mesh.material.uniforms.cameraLocal.value.copy(localCamera);
+  for(const mesh of art.customMeshes||[])if(mesh.layers.isEnabled(0)){mesh.material.uniforms.backdrop.value=backdropA.texture;mesh.material.uniforms.resolution.value.copy(uniforms.resolution.value);}
   camera.layers.set(0);renderer.setRenderTarget(opaque);renderer.render(scene,camera);
-  for(const mesh of art.customMeshes||[]){mesh.material.uniforms.backdrop.value=opaque.texture;mesh.material.uniforms.resolution.value.copy(uniforms.resolution.value);}
+  for(const mesh of art.customMeshes||[]){if(!mesh.layers.isEnabled(0))mesh.material.uniforms.backdrop.value=opaque.texture;mesh.material.uniforms.resolution.value.copy(uniforms.resolution.value);}
   if(art.jelly)art.jelly.material.uniforms.backdrop.value=opaque.texture;camera.layers.enable(1);renderer.setRenderTarget(liquid);renderer.render(scene,camera);
   // Container walls sample the already rendered contents, never their own render target.
   for(const mesh of art.customMeshes||[])if(mesh.layers.isEnabled(2))mesh.material.uniforms.backdrop.value=liquid.texture;

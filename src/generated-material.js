@@ -5,8 +5,8 @@ import {subjectColor} from './background-palette.js';
 export function jellyIllustrationMaterial(original,geometry){
  const hasColor=!!geometry.attributes.color,hasMap=!!original?.map&&!!geometry.attributes.uv;
  const contact=original?.role==='contact';
- const density={glass:.13,ceramic:.55,liquid:.40,soft:.68,fruit:.63,flesh:.84}[original?.role]??.30;
- return new T.ShaderMaterial({transparent:contact,depthWrite:!contact,polygonOffset:contact,polygonOffsetFactor:contact?-1:0,vertexColors:hasColor,defines:{...(hasMap?{PAINT_MAP:1}:{}),...(contact?{CONTACT_SHADOW:1}:{})},uniforms:{bodyDensity:{value:density},backdrop:{value:null},paintMap:{value:original?.map||null},baseColor:{value:original?.color?.clone()||new T.Color('#fff1db')},resolution:{value:new T.Vector2(1,1)}},vertexShader:`
+ const density={'clear-glass':.045,'clear-liquid':.18,glass:.13,ceramic:.55,liquid:.40,soft:.68,fruit:.63,flesh:.84}[original?.role]??.30;
+ return new T.ShaderMaterial({transparent:contact,depthWrite:!contact,polygonOffset:contact,polygonOffsetFactor:contact?-1:0,vertexColors:hasColor,defines:{...(hasMap?{PAINT_MAP:1}:{}),...(contact?{CONTACT_SHADOW:1}:{})},uniforms:{opticalClarity:{value:['clear-liquid','clear-glass'].includes(original?.role)?1:0},interiorFruit:{value:original?.interiorFruit?1:0},bodyDensity:{value:original?.interiorFruit?Math.max(.82,density):density},backdrop:{value:null},paintMap:{value:original?.map||null},baseColor:{value:original?.color?.clone()||new T.Color('#fff1db')},resolution:{value:new T.Vector2(1,1)}},vertexShader:`
  varying vec3 vWorld;varying vec3 vNormal;varying vec3 vPaint;varying vec2 vPaintUv;
  void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;vNormal=normalize(mat3(modelMatrix)*normal);vPaint=vec3(1.);
  #ifdef USE_COLOR
@@ -20,7 +20,7 @@ export function jellyIllustrationMaterial(original,geometry){
  vPaintUv=uv;
  #endif
  gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,fragmentShader:`
- uniform float bodyDensity;uniform sampler2D backdrop;uniform sampler2D paintMap;uniform vec3 baseColor;uniform vec2 resolution;
+ uniform float interiorFruit;uniform float opticalClarity;uniform float bodyDensity;uniform sampler2D backdrop;uniform sampler2D paintMap;uniform vec3 baseColor;uniform vec2 resolution;
  varying vec3 vWorld;varying vec3 vNormal;varying vec3 vPaint;varying vec2 vPaintUv;
  void main(){
  #ifdef CONTACT_SHADOW
@@ -35,15 +35,15 @@ export function jellyIllustrationMaterial(original,geometry){
  paint=pow(max(paint,vec3(.012)),vec3(.96));
  float luminance=dot(paint,vec3(.2126,.7152,.0722));paint=mix(vec3(luminance),paint,1.18);
  paint=mix(paint,floor(clamp(paint,0.,1.)*9.+.5)/9.,.42);
- float light=dot(n,normalize(vec3(-.45,.85,.5)))*.5+.5;light=mix(.72,1.04,smoothstep(.18,.88,light));
+ float light=dot(n,normalize(vec3(-.45,.85,.5)))*.5+.5;light=mix(mix(.72,.55,interiorFruit),1.04,smoothstep(.18,.88,light));
  vec3 body=paint*light;vec3 nv=normalize(mat3(viewMatrix)*n);vec2 uv=gl_FragCoord.xy/resolution;
  // Composite refraction explicitly: alpha blending would lose colour at overlaps.
  float thickness=sqrt(facing);
- vec2 bend=nv.xy*(.012+.022*thickness);
+ vec2 bend=nv.xy*(.012+.022*thickness)*mix(1.,.22,opticalClarity);
  vec3 transmitted=texture2D(backdrop,clamp(uv+bend,vec2(.002),vec2(.998))).rgb;
- vec3 absorption=mix(vec3(1.),mix(paint,vec3(1.),.28),.12+.14*thickness);
+ vec3 absorption=mix(vec3(1.),mix(paint,vec3(1.),.28),(.12+.14*thickness)*mix(1.,.4,opticalClarity));
  transmitted*=absorption;
- float density=clamp(bodyDensity+.08*thickness+.20*rim,0.,.94);
+ float density=clamp(bodyDensity+mix(.08,.03,opticalClarity)*thickness+.20*rim,0.,.94);
  vec3 color=mix(transmitted,body,density);
  color+=mix(paint,vec3(1.,.94,.86),.70)*rim*.22;
  vec3 h=normalize(view+normalize(vec3(-.45,.85,.5)));color+=vec3(1.,.95,.86)*pow(max(dot(n,h),0.),64.)*.25;

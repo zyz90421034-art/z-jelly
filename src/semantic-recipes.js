@@ -120,12 +120,12 @@ export function primitiveStudy(recipe){
   }else if(part.type==='ellipsoid')g=new T.SphereGeometry(.5,12,8);
   else if(part.type==='cylinder')g=new T.CylinderGeometry(.5,.5,1,12,1);
   else if(part.type==='cone')g=new T.ConeGeometry(.5,1,10,1);
-  else if(part.type==='torus')g=new T.TorusGeometry(.43,.07,6,16);
+  else if(part.type==='torus')g=new T.TorusGeometry(part.role==='clear-glass'?.488:.43,part.role==='clear-glass'?.012:.07,8,24);
   else if(part.type==='capsule'){g=new T.CapsuleGeometry(.25,.5,3,8);g.scale(2,1,2);}
   else if(part.type==='cup')g=new T.LatheGeometry([new T.Vector2(0,-.5),new T.Vector2(.32,-.5),new T.Vector2(.38,-.44),new T.Vector2(.5,.46),new T.Vector2(.5,.5),new T.Vector2(.46,.5),new T.Vector2(.34,-.39),new T.Vector2(0,-.39)],16);
   else g=new RoundedBoxGeometry(1,1,1,2,.12);
   g.scale(...part.size);g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...part.rotation)));g.translate(...part.position);g.rotateY(Math.PI*.63);
-  const material=jellyIllustrationMaterial({color:new T.Color(part.color),role:part.role},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.userData.role=part.role||'soft';mesh.userData.sourcePart=part;mesh.layers.set(['glass','ceramic'].includes(part.role)?2:1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
+  const material=jellyIllustrationMaterial({color:new T.Color(part.color),role:part.role,interiorFruit:part.insideLiquid&&['fruit','flesh'].includes(part.role)},g),mesh=new T.Mesh(g,material);mesh.name=part.name;mesh.userData.role=part.role||'soft';mesh.userData.sourcePart=part;mesh.layers.set(['glass','ceramic','clear-glass'].includes(part.role)?2:part.insideLiquid?0:1);mesh.frustumCulled=false;root.add(mesh);meshes.push(mesh);
  }
  if(Number.isFinite(recipe.supportSurface))for(const mesh of meshes){
   const part=mesh.userData.sourcePart;if(!part.fruitType)continue;
