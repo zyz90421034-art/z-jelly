@@ -6,6 +6,16 @@ import {buildModelingPrompt,compileModelingPrompt} from '../src/prompt-modeler.j
 import {primitiveStudy} from '../src/semantic-recipes.js';
 import fs from 'node:fs';
 const palette=[[210,155,110],[225,170,180]];
+test('drink naming variants and a generic label with a clear cup description reach the same blueprint',()=>{
+ const caption='A clear plastic cup filled with a light brown beverage and white foam. The cup has no handle.';
+ for(const label of ['a beverage','an iced drink','a plastic glass','a tumbler','milk','a plastic container','an object','a cappucino']){
+  const r=compileModelingPrompt(buildModelingPrompt(label,caption,palette));assert.equal(r.kind,'coffee-cup',label);
+  assert.equal(r.parts.find(p=>p.name==='vessel').role,'glass');assert.ok(!r.parts.some(p=>p.name==='handle'));
+  assert.ok(r.parts.find(p=>p.name==='vessel').size[1]>r.parts.find(p=>p.name==='vessel').size[0]);
+ }
+ assert.equal(compileModelingPrompt(buildModelingPrompt('a woman','A woman holding a cup of coffee.',palette)).kind,'person');
+ assert.throws(()=>compileModelingPrompt(buildModelingPrompt('a pinwheel','A pinwheel on a table.',palette)));
+});
 test('captured real-photo VLM observations compile without reverting to the generic dessert template',()=>{
  const cases=JSON.parse(fs.readFileSync(new URL('./fixtures/food-observations.json',import.meta.url),'utf8'));
  for(const c of cases){const recipe=compileModelingPrompt(buildModelingPrompt(c.subject,c.description,palette));assert.equal(recipe.kind,c.expectedKind);

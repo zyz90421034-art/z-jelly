@@ -13,10 +13,23 @@ function colorNear(text,nouns,fallback){
 }
 function countNear(text,noun,fallback,max=8){const m=text.match(new RegExp(`\\b(one|two|three|four|five|six|seven|eight|[1-8])\\s+(?:[\\w-]+\\s+){0,1}(?:${noun})\\b`,'i'));return m?clamp(Number(m[1])||({one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8}[m[1].toLowerCase()]),1,max):fallback;}
 export function foodKind(subject,description=''){
+ description=String(description).toLowerCase();
  const label=subject.toLowerCase(),all=(subject+' '+description).toLowerCase();
  if(/cake|torte|gateau|cheesecake/.test(label))return /slice|piece|wedge|triang/.test(all)?'cake-slice':'cake';
  if(/parfait|sundae|trifle|pudding|custard|gelatin|jelly|ice.?cream/.test(label))return 'dessert-cup';
- if(/coffee|espresso|cappuccino|latte|mocha|cocoa|hot chocolate|tea\b|mug|teacup|cup/.test(label))return 'coffee-cup';
+ const specific=/\b(person|woman|man|child|cat|dog|horse|bird|car|camera|house|bottle|carton|sculpture|figurine|statue)\b/.test(label);
+ const drink=/\b(coffee|espresso|cappuccino|latte|mocha|macchiato|cocoa|chocolate drink|hot chocolate|tea|milk|mug|teacup|cup|tumbler|beaker|goblet|beverage|drink|smoothie|milkshake|frappe|frappuccino)\b/;
+ if(!specific&&(drink.test(label)||/\b(?:a|the|one) glass[.!]?$|^glass[.!]?$|\b(?:plastic|drinking|disposable|wine) glass\b/.test(label)))return 'coffee-cup';
+ // A broad name must be refined by the detailed observation, not rejected before using it.
+ // Do not let a background cup turn a recognized person, animal or other specific object into a drink.
+ const generic=/\b(object|item|container|vessel|food|dessert|something|image|picture|photo)\b/.test(label);
+ const mainVessel=/^(?:(?:the |this )?(?:image|picture|photo) (?:shows|depicts|contains) |there is |this is )?(?:a |an |the )?(?:(?:clear|transparent|plastic|disposable|tall|short|wide|small|large|single|brown|white|blue|green|red|pink|yellow|ceramic|paper|iced|cold|hot|coffee|tea|drinking)\s+){0,6}(?:cup|mug|tumbler|goblet|beaker|glass)\b/.test(description.trim());
+ if(!specific&&mainVessel)return 'coffee-cup';
+ if(generic&&!specific){
+  if(/\b(cake|torte|gateau|cheesecake)\b/.test(description))return /slice|piece|wedge|triang/.test(description)?'cake-slice':'cake';
+  if(/\b(parfait|sundae|trifle|pudding|custard|gelatin|jelly|ice.?cream)\b/.test(description))return 'dessert-cup';
+  if(drink.test(description)||/\bglass\s+(?:of|filled with)\b/.test(description))return 'coffee-cup';
+ }
  return null;
 }
 export function buildFoodBlueprint(subject,description,palette){
@@ -36,7 +49,7 @@ export function buildFoodBlueprint(subject,description,palette){
  if(plate)add('plate','lathe',colorNear(text,'plate|saucer|dish',COLORS.white),[0,.045,0],[1.18,.09,1.18],'ceramic',{profile:[[0,-.5],[.35,-.5],[.5,0],[.5,.35],[.34,-.18],[0,-.18]]});
  if(plate&&evidence('spoon',/spoon/.test(text))){add('spoon-bowl','ellipsoid','#bac7d8',[.42,.105,.05],[.16,.035,.23],'soft');add('spoon-handle','box','#bac7d8',[.42,.10,.28],[.045,.025,.36],'soft');}
  if(kind==='coffee-cup'||kind==='dessert-cup'){
-  const dessert=kind==='dessert-cup',tall=/tall|glass|tumbler|goblet|parfait/.test(text)&&!/short|wide|shallow/.test(text);
+  const dessert=kind==='dessert-cup',tall=/tall|glass|tumbler|goblet|parfait|plastic cup|disposable cup/.test(text)&&!/short|wide|shallow/.test(text);
   const shallow=/wide|shallow|bowl/.test(text),h=tall?1.05:shallow?.52:.70,w=tall?.70:shallow?1.0:.86,y=floor+h/2;
   const glass= /glass|transparent|clear/.test(text)||dessert;
   const cupColor=colorNear(text,'cup|mug|glass|bowl',glass?'#c6dce3':COLORS.white);
@@ -51,7 +64,7 @@ export function buildFoodBlueprint(subject,description,palette){
    bodyTop=end;
    if(/whip|cream|scoop/.test(text))add('cream-swirl','swirl',cream,[0,bodyTop+.10,0],[w*.65,.24,w*.65]);
   }else{
-   const drinkColor=/matcha|green tea/.test(text)?COLORS.green:/milk|latte|cappuccino/.test(text)?'#c58b61':COLORS.brown;
+   const drinkColor=/matcha|green tea/.test(text)?COLORS.green:/milk|latte|cappuccino|light brown/.test(text)?'#c58b61':COLORS.brown;
    bodyTop=floor+h*.85;
    add('drink','lathe',drinkColor,[0,floor+h*.50,0],[w*.84,h*.68,w*.84],'liquid',{profile:[[0,-.5],[.36,-.5],[.5,.5],[0,.5]]});
    if(evidence('foam',/foam|froth|latte art|cappuccino/.test(text))){

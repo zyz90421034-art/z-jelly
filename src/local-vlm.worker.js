@@ -1,6 +1,7 @@
 import {Idefics3Processor,Idefics3ForConditionalGeneration,RawImage,TextStreamer,env} from './vlm-runtime.js';
 import {installModelFiles} from './local-model-files.js';
 import {buildModelingPrompt,compileModelingPrompt} from './prompt-modeler.js';
+import {foodKind} from './food-blueprint.js';
 
 let lastProgress=0;
 const progress=(stage,value)=>self.postMessage({type:'progress',stage,value:lastProgress=Math.max(lastProgress,value)});
@@ -28,17 +29,23 @@ self.onmessage=async({data})=>{
   model=await Idefics3ForConditionalGeneration.from_pretrained(id,{device:'wasm',dtype:{embed_tokens:'q8',vision_encoder:'q4',decoder_model_merged:'q4'}});
   const image=await RawImage.fromBlob(data.file);
   const subject=await generateText(model,processor,image,'What is the main object in this image? Answer with only its name.',20,46,56);
-  const isCake=/cake|torte|gateau/i.test(subject),isDrink=/coffee|espresso|cappuccino|latte|mocha|tea\b|mug|cup/i.test(subject)&&!isCake;
-  const isDessert=/parfait|sundae|trifle|pudding|custard|jelly|gelatin|ice.?cream/i.test(subject);
+  let kind=foodKind(subject);
+  const isCake=kind==='cake'||kind==='cake-slice',isDrink=kind==='coffee-cup',isDessert=kind==='dessert-cup';
   // The 500M VLM gives better evidence to short, concrete questions than a long checklist.
   let description=await generateText(model,processor,image,isDrink?'Describe the cup and what is inside it.':isCake||isDessert?'Describe this image.':'Describe the main object, its visible parts, colors and pose in two sentences. Ignore the background.',isCake||isDessert?150:120,56,80);
-  if(isCake||isDrink||isDessert){
-   const detail=await generateText(model,processor,image,isCake?'How many cake layers are visible?':isDrink?'Does the cup have a handle?':'Describe the dessert layers.',isDessert?80:25,80,92);
+  const resolvedKind=foodKind(subject,description);
+  if(!kind&&resolvedKind){description+=' '+await generateText(model,processor,image,resolvedKind==='coffee-cup'?'Describe the cup and what is inside it.':'Describe this image.',100,80,88);}
+  kind=resolvedKind;
+  if(kind){
+   const detail=await generateText(model,processor,image,kind==='cake'||kind==='cake-slice'?'How many cake layers are visible?':kind==='coffee-cup'?'Does the cup have a handle?':'Describe the dessert layers.',kind==='dessert-cup'?80:25,88,92);
    description+=' '+detail;
   }
   if(subject.length<2||description.length<12)throw Error('没有看清照片中的主体，请换一张主体清楚的图片。');
   progress('编写建模提示词与组合部件…',94);
-  const prompt=buildModelingPrompt(subject,description,data.palette),recipe=compileModelingPrompt(prompt);
+  if(data.debug)self.postMessage({type:'diagnostic',subject,description});
+  let recipe;
+  try{recipe=compileModelingPrompt(buildModelingPrompt(subject,description,data.palette));}
+  catch(error){throw Error(error.message+'（识别名称：'+subject.slice(0,100)+'）');}
   await model.dispose();model=null;
   self.postMessage({type:'complete',recipe});
  }catch(error){self.postMessage({type:'error',message:error.message||'设备端建模失败，请重试。'});}
