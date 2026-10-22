@@ -25,25 +25,19 @@ export function buildDrinkBlueprint(subject,description,palette,evidence){
   // Narrow projected ellipses indicate a tilted round slice, not a thin oval mesh.
   const tilt=[.13+(i%3)*.11,((i%3)-1)*.32,((i%2)*2-1)*.15];
   if(f.family==='red'){
-   const cut=f.cut===true||!measured&&i%2===0,depth=fw*(cut?.85:.96);
-   add(prefix,cut?'berry-half':'berry','#e85d70',[x,y,z],[fw,fh,depth],'fruit',{...extra,cut});
-   if(cut)add(prefix+'-face','berry-cutface','#ffad98',[x,y,z+.002],[fw*.88,fh*.94,.012],'flesh',{insideLiquid:true});
-   else for(let k=0;k<7;k++){const a=k/7*Math.PI*2;add(prefix+'-seed-'+k,'ellipsoid','#ffd490',[x+Math.sin(a)*fw*.30,y+Math.cos(a)*fh*.29,z+depth*.36],[.012,.020,.010],'fruit',{insideLiquid:true});}
+   const cut=f.cut===true||!measured&&i%2===0,berryHeight=Math.max(fh,fw*1.15),berryWidth=Math.min(fw,berryHeight*.88),depth=berryWidth*(cut?.85:.96);
+   add(prefix,cut?'berry-half':'berry','#e85d70',[x,y,z],[berryWidth,berryHeight,depth],'fruit',{...extra,cut,fruitDetail:'strawberry-body'});
+   if(cut)add(prefix+'-face','berry-cutface','#f79a83',[x,y,z+.003],[berryWidth,berryHeight,.012],'flesh',{insideLiquid:true,fruitDetail:'strawberry-face'});
   }else if(f.family==='dark-berry'){
    const diameter=Math.max(fw,fh);
    add(prefix,'blueberry','#686194',[x,y,z],[diameter,diameter*.96,diameter],'fruit',extra);
    add(prefix+'-crown','blueberry-crown','#514b70',[x,y,z+diameter*.48],[diameter*.29,.012,diameter*.29],'fruit',{rotation:[Math.PI/2,0,0],insideLiquid:true});
   }else{
-   const citrus=f.family==='citrus',diameter=Math.max(fw,fh),thickness=diameter*(citrus?.30:.42),flat=measured&&fh<fw*.42,chunk=measured&&!citrus&&f.box[2]/f.box[3]>.9;
+   const citrus=f.family==='citrus',diameter=Math.max(fw,fh),thickness=diameter*(citrus?.28:.36),flat=measured&&fh<fw*.42,chunk=measured&&!citrus&&f.box[2]/f.box[3]>.9;
    if(flat){tilt[0]=Math.acos(clamp(fh/diameter,.12,.9));y=top-thickness*.25;}
-   if(chunk){tilt[1]+=.40;}
-   add(prefix,chunk?'box':'cylinder',citrus?'#f3af45':'#97b95c',[x,y,z],chunk?[diameter,diameter*.82,thickness*1.5]:[diameter,thickness,diameter],'fruit',{...extra,rotation:chunk?[0,0,0]:[Math.PI/2,0,0]});
-   add(prefix+'-flesh',chunk?'box':'cylinder',citrus?'#ffd18a':'#cadd83',[x,y,z+thickness*(chunk?.77:.51)],chunk?[diameter*.87,diameter*.70,.018]:[diameter*.87,.018,diameter*.87],'flesh',{rotation:chunk?[0,0,0]:[Math.PI/2,0,0],insideLiquid:true});
-   for(let k=0;k<8;k++){
-    const a=k/8*Math.PI*2;
-    if(citrus)add(prefix+'-segment-'+k,'ellipsoid','#f7b75f',[x+Math.sin(a)*diameter*.25,y+Math.cos(a)*diameter*.25,z+thickness*.56],[diameter*.17,diameter*.23,.018],'fruit',{insideLiquid:true,rotation:[0,0,-a]});
-    else add(prefix+'-seed-'+k,'ellipsoid','#6d685a',[x+Math.sin(a)*diameter*.24,y+Math.cos(a)*diameter*.24,z+thickness*(chunk?.84:.56)],[diameter*.025,diameter*.055,.012],'fruit',{insideLiquid:true,rotation:[0,0,-a]});
-   }
+   if(chunk)tilt[1]+=.40;
+   add(prefix,chunk?'box':'cylinder',citrus?'#ef9c32':'#91a75c',[x,y,z],chunk?[diameter,diameter*.82,thickness*1.5]:[diameter,thickness,diameter],'fruit',{...extra,fruitDetail:chunk?'kiwi-chunk':citrus?'citrus-rind':'kiwi-rind',rotation:chunk?[0,0,0]:[Math.PI/2,0,0]});
+   add(prefix+'-flesh',chunk?'box':'cylinder',citrus?'#ffc165':'#bdcf69',[x,y,z+thickness*(chunk?.77:.51)],chunk?[diameter*.87,diameter*.70,.018]:[diameter*.92,.018,diameter*.92],'flesh',{fruitDetail:chunk?'kiwi-chunk-face':citrus?'citrus-face':'kiwi-face',rotation:chunk?[0,0,0]:[Math.PI/2,0,0],insideLiquid:true});
   }
   const turn=new T.Quaternion().setFromEuler(new T.Euler(...tilt));
   for(const p of parts.slice(start)){const v=new T.Vector3(...p.position).sub(new T.Vector3(x,y,z)).applyQuaternion(turn).add(new T.Vector3(x,y,z));p.position=v.toArray();const q=new T.Quaternion().setFromEuler(new T.Euler(...p.rotation)).premultiply(turn);p.rotation=new T.Euler().setFromQuaternion(q).toArray().slice(0,3);}

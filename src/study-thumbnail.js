@@ -22,7 +22,7 @@ export function studyThumbnail(root,palette){
   const outline=hull(points);if(outline.length<3)return;all.push(...outline);
   const material=Array.isArray(mesh.material)?mesh.material[0]:mesh.material,u=material.uniforms;
   const color=u?.baseColor?.value?.clone()||material.color?.clone()||u?.tint?.value?.clone()||new T.Color('#e4b5cb');
-  const vertexColor=mesh.geometry.attributes.color;if(vertexColor){const mean=new T.Color(0,0,0),sample=new T.Color();let count=0;for(let i=0;i<vertexColor.count;i+=Math.max(1,Math.floor(vertexColor.count/200))){sample.fromBufferAttribute(vertexColor,i);mean.add(sample);count++;}color.multiply(mean.multiplyScalar(1/count));}
+  const vertexColor=mesh.geometry.attributes.color;if(vertexColor&&!mesh.userData.sourcePart?.fruitDetail){const mean=new T.Color(0,0,0),sample=new T.Color();let count=0;for(let i=0;i<vertexColor.count;i+=Math.max(1,Math.floor(vertexColor.count/200))){sample.fromBufferAttribute(vertexColor,i);mean.add(sample);count++;}color.multiply(mean.multiplyScalar(1/count));}
   const role=mesh.userData.role||(u?.kind?.value===1?'glass':u?.kind?'liquid':'soft');
   items.push({outline,color,role,depth:depth/position.count});
  });
@@ -34,9 +34,9 @@ export function studyThumbnail(root,palette){
  const background=ctx.createRadialGradient(35,25,5,90,90,155);background.addColorStop(0,theme.cool.getStyle());background.addColorStop(1,theme.accent.getStyle());ctx.fillStyle=background;ctx.fillRect(0,0,160,160);
  ctx.fillStyle='rgba(140,119,160,.17)';ctx.beginPath();ctx.ellipse(82,137,43,6,0,0,Math.PI*2);ctx.fill();
  for(const item of items.sort((a,b)=>a.depth-b.depth)){
-  const glass=item.role==='glass',color=item.color.clone().lerp(new T.Color('#fff0df'),.14),paint=ctx.createLinearGradient(35,38,125,138);
+  const glass=['glass','clear-glass'].includes(item.role),clearLiquid=item.role==='clear-liquid',color=item.color.clone().lerp(new T.Color('#fff0df'),.14),paint=ctx.createLinearGradient(35,38,125,138);
   paint.addColorStop(0,color.clone().lerp(new T.Color('#fff2df'),.27).getStyle());paint.addColorStop(1,color.getStyle());
-  path(ctx,item.outline);ctx.fillStyle=paint;ctx.globalAlpha=glass?.18:.94;ctx.fill();ctx.globalAlpha=1;
+  path(ctx,item.outline);ctx.fillStyle=paint;ctx.globalAlpha=glass?.15:clearLiquid?.23:.94;ctx.fill();ctx.globalAlpha=1;
   ctx.strokeStyle=glass?'rgba(255,246,229,.85)':color.clone().multiplyScalar(.88).getStyle();ctx.lineWidth=glass?1.6:.7;ctx.stroke();
   ctx.save();path(ctx,item.outline);ctx.clip();ctx.strokeStyle='rgba(255,246,231,.45)';ctx.lineCap='round';ctx.lineWidth=2.2;ctx.beginPath();const p=item.outline[0];ctx.moveTo(p.x+2,p.y+4);ctx.quadraticCurveTo(p.x+1,p.y+10,p.x+5,p.y+17);ctx.stroke();ctx.restore();
  }

@@ -1,5 +1,7 @@
 import * as T from 'three';
+import {fruitPartGeometry} from './fruit-geometry.js';
 export function cakePartGeometry(part){
+ if(part.fruitDetail)return fruitPartGeometry(part);
  if(part.type==='berry'||part.type==='berry-half'){
   const half=part.type==='berry-half',g=new T.SphereGeometry(.5,16,12,half?Math.PI:0,half?Math.PI:Math.PI*2);const p=g.attributes.position;
   for(let i=0;i<p.count;i++){const taper=.80+.20*(p.getY(i)+.5);p.setX(i,p.getX(i)*taper);p.setZ(i,p.getZ(i)*taper);}g.computeVertexNormals();return g;

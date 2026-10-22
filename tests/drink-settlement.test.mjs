@@ -25,3 +25,10 @@ test('a fruit drink has one acyclic support path from every piece to its cup',()
  for(const p of names.values()){let name=p.name;const visited=new Set();while(name!=='vessel'){assert.ok(!visited.has(name),'cyclic fruit supports');visited.add(name);name=names.get(name)?.supportedBy;assert.ok(name);}}
  assert.equal(r.parts.find(p=>p.name==='drink').role,'clear-liquid');
 });
+test('an unsupported upright slice tilts into a lower stable pose instead of balancing on its rim',()=>{
+ const p={name:'fruit-0',type:'cylinder',fruitType:'citrus',position:[0,1,0],rotation:[Math.PI/2,0,0],size:[.32,.065,.32],color:'#efad66',role:'fruit'};
+ const contacts=settleDrinkFruit([p],{floor:.07,radius:.37});
+ assert.ok(p.position[1]<.21);assert.ok(Math.abs(p.rotation[0]-Math.PI/2)>.35);
+ assert.ok(contacts[0].stabilityMargin>=-.003);
+ const m=mesh(p);m.geometry.computeBoundingBox();assert.ok(Math.abs(m.geometry.boundingBox.min.y-.07)<1e-6);
+});
